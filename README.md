@@ -1,0 +1,2 @@
+# VoiceOfOpenDoor
+VoiceOfOpenDoor is an open source project dedicated to creating a high-quality, locally hosted synthetic voice for Open Door Design. Built from a carefully curated speech dataset, pronunciation standards, and reproducible training process, it provides a consistent narration voice for accessible applications, educational content, audio description, and future Open Door Design projects.
