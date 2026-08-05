@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Migration Results - VoiceOfOpenDoor{% endblock %}
+{% block content %}
+<h1 id="status-message" tabindex="-1">Migration Results</h1>
+
+<p>Mode: {{ mode }}. {{ results|length }} file{% if results|length != 1 %}s{% endif %} processed.</p>
+
+<section>
+    <h2>Results</h2>
+    <ul>
+        {% for r in results %}
+        <li>{{ r.file }} &mdash; {{ r.status }}{% if r.reason %}: {{ r.reason }}{% endif %}</li>
+        {% endfor %}
+    </ul>
+</section>
+
+<p><button type="button" class="as-link" data-href="{{ url_for('home') }}">Continue to Home</button></p>
+{% endblock %}

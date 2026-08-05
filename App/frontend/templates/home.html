@@ -3,6 +3,10 @@
 {% block content %}
 <h1>VoiceOfOpenDoor</h1>
 
+{% if status_message %}
+<p id="status-message" tabindex="-1">{{ status_message }}</p>
+{% endif %}
+
 <section>
     <h2>Current Status</h2>
     <p>

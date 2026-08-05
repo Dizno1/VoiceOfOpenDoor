@@ -1,0 +1,36 @@
+# VoiceOfOpenDoor is published on GitHub. Everything below is private
+# working data that must never be committed - see the External Data
+# Architecture note in App/backend/app.py and App/backend/local_data.py.
+
+# Local configuration - contains Dean's real folder path
+App/local-settings.json
+
+# Legacy in-repo data locations (pre-external-data-architecture).
+# Recordings, transcripts, segments, and models now live in the
+# user-configured external data folder, not here - but excluded in
+# case anything is ever written to these paths again by mistake.
+Dataset/Raw Audio/
+Dataset/Processed Audio/
+Dataset/Transcripts/
+Dataset/Segments/
+Models/
+Exports/
+Backups/
+
+# Working media files, wherever they might appear
+*.wav
+*.mp3
+*.m4a
+*.flac
+*.aac
+*.mov
+*.mp4
+
+# Python
+__pycache__/
+*.pyc
+
+# If a narrowly-scoped public test-fixture folder is ever added, allow
+# audio inside it specifically - uncomment and adjust the path:
+# !Tests/Fixtures/**/*.wav
+# !Tests/Fixtures/**/*.mp3

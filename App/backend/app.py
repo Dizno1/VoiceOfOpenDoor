@@ -13,34 +13,80 @@ command required to use the app day to day. Running `python app.py`
 directly (as below) is still supported for development, with the
 Flask debug reloader on.
 
-STATUS: Working. Home (/) and Recordings (/recordings, /recording/<file>)
-are real and tested against the actual manifest and corpus - including
-Add Recordings, which changes the count as files are imported. Every
-other item in the Workbench nav (Analyze, Transcripts,
-Segments, Train, Generate Speech, Settings) is a real route that
-renders a real page, but each currently states plainly that it is not
-yet built rather than faking functionality - see TOOLS below.
+EXTERNAL DATA ARCHITECTURE (Aug 5, 2026): VoiceOfOpenDoor is now
+published to GitHub. The repository holds application code only.
+All recordings, the manifest, transcripts, segments, and models live
+in a user-configured folder outside the repository - see
+App/backend/local_data.py and App/local-settings.json (gitignored).
+Every route except the setup flow requires a valid, configured data
+root; a before_request hook redirects to /setup otherwise. There is
+no silent fallback to storing private data inside the repository.
+
+STATUS: Working. Home, Recordings, Analyze, Add Recordings, and the
+first-run/change-data-folder/migration flow are real and tested. Every
+other item in the Workbench nav (Transcripts, Segments, Train,
+Generate Speech) is a real route that renders a real page, but each
+currently states plainly that it is not yet built. Settings is now
+real too - see below.
 """
 
 import hashlib
 import json
+import os
+import platform
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
 
 from flask import Flask, abort, redirect, render_template, request, send_from_directory, url_for
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent  # VoiceOfOpenDoor/
-MANIFEST_PATH = BASE_DIR / "Dataset" / "Metadata" / "recordings.json"
-AUDIO_DIR = BASE_DIR / "Dataset" / "Raw Audio"
+BASE_DIR = Path(__file__).resolve().parent.parent.parent  # VoiceOfOpenDoor/ (the repository root)
+REPO_LEGACY_AUDIO_DIR = BASE_DIR / "Dataset" / "Raw Audio"  # old in-repo location, migration source only
 
 sys.path.insert(0, str(BASE_DIR / "Tools" / "Audio Processing"))
 sys.path.insert(0, str(BASE_DIR / "Tools" / "Dataset Utilities"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from analyze import analyze_file  # noqa: E402
 from build_manifest import natural_duration  # noqa: E402
 from analysis_service import run_analysis, analysis_is_stale, summarize_for_display, natural_datetime  # noqa: E402
+import local_data  # noqa: E402
 
 app = Flask(__name__, template_folder="../frontend/templates", static_folder="../frontend/static")
+
+LOCAL_SETTINGS_PATH = BASE_DIR / "App" / "local-settings.json"
+LOCAL_SETTINGS_EXAMPLE_PATH = BASE_DIR / "App" / "local-settings.example.json"
+config = local_data.LocalDataConfig(LOCAL_SETTINGS_PATH, LOCAL_SETTINGS_EXAMPLE_PATH)
+
+
+def get_data_root():
+    return config.get_data_root()
+
+
+def get_audio_dir():
+    root = get_data_root()
+    return root / "Original Recordings" if root else None
+
+
+def get_manifest_path():
+    root = get_data_root()
+    return root / "Metadata" / "recordings.json" if root else None
+
+
+SETUP_EXEMPT_ENDPOINTS = {
+    "setup_page", "setup_confirm", "setup_migrate_page", "setup_migrate_run", "static",
+}
+
+
+@app.before_request
+def require_data_root():
+    if request.endpoint in SETUP_EXEMPT_ENDPOINTS or request.endpoint is None:
+        return
+    root = get_data_root()
+    status = local_data.validate_data_root(root)
+    if not (status["exists"] and status["writable"]):
+        return redirect(url_for("setup_page"))
+
 
 CLASSIFICATION_OPTIONS = [
     "Candidate",
@@ -80,39 +126,42 @@ TOOLS = [
     ("generate-speech", "Generate Speech", "/generate-speech"),
     ("settings", "Settings", "/settings"),
 ]
-BUILT_TOOLS = {"home", "recordings", "analyze"}
+BUILT_TOOLS = {"home", "recordings", "analyze", "settings"}
 STUB_DESCRIPTIONS = {
     "transcripts": "Will list accepted recordings, generate a draft transcript for each, and let you review it sentence by sentence: play, edit, approve. This is Phase 5, planned next.",
     "segments": "Will let you cut accepted, transcribed recordings into corpus-ready clips.",
     "train": "Will walk through selecting and integrating a voice engine (XTTS v2 is the current candidate - see Documentation/Voice Pipeline Roadmap.md for an unresolved licensing question) and producing a trained voice.",
     "generate-speech": "Will wrap Tools/Synthesis/synthesize.py: type text, generate speech, play it, save the WAV file.",
-    "settings": "Will show the reference development environment and let you confirm which pipeline tools are verified on this machine.",
 }
 
 
 def load_manifest():
-    if not MANIFEST_PATH.exists():
+    manifest_path = get_manifest_path()
+    if manifest_path is None or not manifest_path.exists():
         return []
-    return json.loads(MANIFEST_PATH.read_text())
+    return json.loads(manifest_path.read_text())
 
 
 def save_manifest(manifest):
-    MANIFEST_PATH.write_text(json.dumps(manifest, indent=2))
+    manifest_path = get_manifest_path()
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path.write_text(json.dumps(manifest, indent=2))
 
 
 def build_status_summary(manifest):
+    active = [r for r in manifest if r.get("status", "Active") != "Archived"]
     counts = {}
-    for r in manifest:
+    for r in active:
         counts[r["classification"]] = counts.get(r["classification"], 0) + 1
 
     next_action = None
-    for r in manifest:
+    for r in active:
         if r["classification"] == "Evaluation Only":
             next_action = r
             break
 
     return {
-        "total": len(manifest),
+        "total": len(active),
         "counts": counts,
         "next_action": next_action,
     }
@@ -123,19 +172,152 @@ def inject_nav():
     return {"tools": TOOLS}
 
 
+# ---------------------------------------------------------------------------
+# Setup / first-run / change-data-folder / migration
+# ---------------------------------------------------------------------------
+
+@app.route("/setup")
+def setup_page():
+    root = get_data_root()
+    status = local_data.validate_data_root(root)
+    return render_template(
+        "setup.html",
+        active="settings",
+        current_path=str(root) if root else "",
+        status=status,
+        is_reconfigure=status["exists"] and status["writable"],
+        error_message=request.args.get("error_message"),
+    )
+
+
+@app.route("/setup", methods=["POST"])
+def setup_confirm():
+    submitted_path = request.form.get("data_root", "").strip()
+    if not submitted_path:
+        return redirect(url_for("setup_page", error_message="Enter a folder path."))
+
+    create_result = local_data.create_data_root_if_needed(submitted_path)
+    if not create_result["created"]:
+        return redirect(url_for("setup_page", error_message=create_result["error"]))
+
+    root = create_result["root"]
+    status = local_data.validate_data_root(root)
+    if not status["writable"]:
+        return redirect(url_for("setup_page", error_message=status["error"]))
+
+    local_data.ensure_subfolders(root)
+    config.save(str(root))
+
+    legacy_files = local_data.find_repo_corpus(REPO_LEGACY_AUDIO_DIR)
+    if legacy_files:
+        return redirect(url_for("setup_migrate_page"))
+
+    return redirect(url_for("home", status_message="Data folder confirmed."))
+
+
+@app.route("/setup/migrate")
+def setup_migrate_page():
+    legacy_files = local_data.find_repo_corpus(REPO_LEGACY_AUDIO_DIR)
+    return render_template("setup_migrate.html", active="settings", legacy_files=legacy_files, count=len(legacy_files))
+
+
+@app.route("/setup/migrate", methods=["POST"])
+def setup_migrate_run():
+    mode = request.form.get("mode", "skip")
+    root = get_data_root()
+
+    if mode == "skip" or root is None:
+        return redirect(url_for("home", status_message="Migration skipped."))
+
+    dest_dir = root / "Original Recordings"
+    legacy_files = local_data.find_repo_corpus(REPO_LEGACY_AUDIO_DIR)
+
+    results = []
+    for f in legacy_files:
+        results.append(local_data.migrate_file(f, dest_dir, mode))
+
+    # Migrate the manifest itself (classifications, notes, analysis) -
+    # merge into the new location's manifest rather than overwrite it,
+    # in case some entries are already there.
+    legacy_manifest_path = BASE_DIR / "Dataset" / "Metadata" / "recordings.json"
+    if legacy_manifest_path.exists():
+        legacy_manifest = json.loads(legacy_manifest_path.read_text())
+        new_manifest = load_manifest()
+        existing_files = {r["file"] for r in new_manifest}
+        for entry in legacy_manifest:
+            if entry["file"] not in existing_files:
+                new_manifest.append(entry)
+        save_manifest(new_manifest)
+
+    return render_template("setup_migrate_results.html", active="settings", results=results, mode=mode)
+
+
+# ---------------------------------------------------------------------------
+# Settings
+# ---------------------------------------------------------------------------
+
+@app.route("/settings")
+def settings_page():
+    root = get_data_root()
+    status = local_data.validate_data_root(root)
+    counts = local_data.count_data(root) if root else {}
+    return render_template(
+        "settings.html",
+        active="settings",
+        data_root=str(root) if root else "Not configured",
+        status=status,
+        counts=counts,
+        status_message=request.args.get("status_message"),
+    )
+
+
+@app.route("/settings/open-folder", methods=["POST"])
+def settings_open_folder():
+    root = get_data_root()
+    if root is None:
+        return redirect(url_for("settings_page", status_message="No data folder configured."))
+    try:
+        if platform.system() == "Windows":
+            os.startfile(root)  # noqa: S606 - local desktop app, opening the user's own configured folder
+            msg = "Opened the data folder in File Explorer."
+        else:
+            msg = f"Cannot open a folder window automatically on this platform. The path is: {root}"
+    except OSError as exc:
+        msg = f"Could not open the folder: {exc}"
+    return redirect(url_for("settings_page", status_message=msg))
+
+
+@app.route("/settings/validate", methods=["POST"])
+def settings_validate():
+    root = get_data_root()
+    status = local_data.validate_data_root(root)
+    if status["exists"] and status["writable"]:
+        msg = "Data folder is available and writable."
+    else:
+        msg = f"Problem found: {status['error']}"
+    return redirect(url_for("settings_page", status_message=msg))
+
+
+# ---------------------------------------------------------------------------
+# Home / Recordings / Recording detail
+# ---------------------------------------------------------------------------
+
 @app.route("/")
 def home():
     manifest = load_manifest()
     summary = build_status_summary(manifest)
-    return render_template("home.html", summary=summary, count_labels=COUNT_LABELS, active="home")
+    return render_template("home.html", summary=summary, count_labels=COUNT_LABELS, active="home",
+                            status_message=request.args.get("status_message"))
 
 
 @app.route("/recordings")
 def recordings_screen():
     manifest = load_manifest()
+    active_manifest = [r for r in manifest if r.get("status", "Active") != "Archived"]
+    archived = [r for r in manifest if r.get("status", "Active") == "Archived"]
 
     grouped = {key: [] for key in GROUP_ORDER}
-    for r in manifest:
+    for r in active_manifest:
         grouped.setdefault(r["classification"], []).append(r)
 
     # Always render every group, even empty ones, so headings don't
@@ -152,6 +334,7 @@ def recordings_screen():
     return render_template(
         "recordings.html",
         groups=groups,
+        archived=archived,
         active="recordings",
         status_message=status_message,
         focus_group=focus_group,
@@ -169,7 +352,8 @@ def recording_detail(filename):
     if record is None:
         abort(404)
     status_message = request.args.get("status_message")
-    stale = bool(record.get("analysis")) and analysis_is_stale(record["analysis"], AUDIO_DIR / filename)
+    audio_dir = get_audio_dir()
+    stale = bool(record.get("analysis")) and analysis_is_stale(record["analysis"], audio_dir / filename)
     analyzed_at_natural = None
     if record.get("analysis") and record["analysis"].get("analyzed_at"):
         analyzed_at_natural = natural_datetime(record["analysis"]["analyzed_at"])
@@ -186,7 +370,7 @@ def recording_detail(filename):
 
 @app.route("/audio/<path:filename>")
 def audio_file(filename):
-    return send_from_directory(AUDIO_DIR, filename)
+    return send_from_directory(get_audio_dir(), filename)
 
 
 @app.route("/recording/<path:filename>/classification", methods=["POST"])
@@ -217,6 +401,20 @@ def update_notes(filename):
     return redirect(url_for("recording_detail", filename=filename, status_message="Notes saved."))
 
 
+@app.route("/recording/<path:filename>/archive", methods=["POST"])
+def toggle_archive(filename):
+    manifest = load_manifest()
+    record = _find_recording(manifest, filename)
+    if record is None:
+        abort(404)
+
+    current = record.get("status", "Active")
+    record["status"] = "Active" if current == "Archived" else "Archived"
+    save_manifest(manifest)
+    verb = "restored from archive" if record["status"] == "Active" else "archived"
+    return redirect(url_for("recording_detail", filename=filename, status_message=f"Recording {verb}."))
+
+
 @app.route("/recording/<path:filename>/delete/confirm")
 def delete_confirm(filename):
     manifest = load_manifest()
@@ -235,7 +433,7 @@ def delete_recording(filename):
 
     classification = record["classification"]
 
-    audio_path = AUDIO_DIR / filename
+    audio_path = get_audio_dir() / filename
     if audio_path.exists():
         audio_path.unlink()
 
@@ -248,6 +446,10 @@ def delete_recording(filename):
         focus_group=classification,
     ))
 
+
+# ---------------------------------------------------------------------------
+# Add Recordings
+# ---------------------------------------------------------------------------
 
 SUPPORTED_IMPORT_EXTENSIONS = {".wav", ".mp3", ".m4a"}
 # .mov and other video containers are not supported yet - would need
@@ -270,6 +472,7 @@ def import_recordings_form():
 
 @app.route("/recordings/import", methods=["POST"])
 def import_recordings():
+    audio_dir = get_audio_dir()
     uploaded_files = request.files.getlist("audio_files")
     manifest = load_manifest()
     existing_filenames = {r["file"] for r in manifest}
@@ -304,7 +507,7 @@ def import_recordings():
             results["skipped"].append({"file": original_name, "reason": "Duplicate filename - a recording with this exact name is already in the corpus."})
             continue
 
-        dest_path = AUDIO_DIR / original_name
+        dest_path = audio_dir / original_name
         if dest_path.exists():
             # Shouldn't happen if the manifest and disk agree, but don't
             # silently overwrite either way.
@@ -313,7 +516,7 @@ def import_recordings():
 
         # Save to a temp name first so a failed/damaged file never lands
         # in the real corpus folder under its final name.
-        temp_path = AUDIO_DIR / f".importing-{original_name}"
+        temp_path = audio_dir / f".importing-{original_name}"
         try:
             upload.save(temp_path)
         except Exception as exc:  # noqa: BLE001
@@ -321,7 +524,7 @@ def import_recordings():
             continue
 
         if existing_checksums is None:
-            existing_checksums = {_file_sha256(AUDIO_DIR / r["file"]): r["file"] for r in manifest if (AUDIO_DIR / r["file"]).exists()}
+            existing_checksums = {_file_sha256(audio_dir / r["file"]): r["file"] for r in manifest if (audio_dir / r["file"]).exists()}
 
         new_checksum = _file_sha256(temp_path)
         if new_checksum in existing_checksums:
@@ -349,9 +552,11 @@ def import_recordings():
             "duration_natural": natural_duration(analysis.get("duration_seconds", 0)),
             "duration_seconds": analysis.get("duration_seconds"),
             "classification": "Evaluation Only",
+            "status": "Active",
             "note": f"Imported via Add Recordings on {datetime.now().strftime('%Y-%m-%d')}. Not yet reviewed.",
             "user_notes": "",
             "objective_flags": analysis.get("flags", []),
+            "analysis": None,
         }
         manifest.append(entry)
         results["imported"].append(original_name)
@@ -362,23 +567,28 @@ def import_recordings():
     return render_template("import_results.html", results=results, active="recordings")
 
 
+# ---------------------------------------------------------------------------
+# Analyze
+# ---------------------------------------------------------------------------
+
 def _needs_analysis(record):
     analysis = record.get("analysis")
     if analysis is None:
         return True
     if analysis.get("status") == "failed":
         return True
-    audio_path = AUDIO_DIR / record["file"]
+    audio_path = get_audio_dir() / record["file"]
     return analysis_is_stale(analysis, audio_path)
 
 
 @app.route("/analyze")
 def analyze_page():
     manifest = load_manifest()
+    audio_dir = get_audio_dir()
 
     needing = [r for r in manifest if _needs_analysis(r)]
     analyzed = [r for r in manifest if not _needs_analysis(r) and r.get("analysis")]
-    stale = [r for r in needing if r.get("analysis") and analysis_is_stale(r["analysis"], AUDIO_DIR / r["file"])]
+    stale = [r for r in needing if r.get("analysis") and analysis_is_stale(r["analysis"], audio_dir / r["file"])]
 
     needing_groups = {key: [] for key in GROUP_ORDER}
     for r in needing:
@@ -410,6 +620,7 @@ def analyze_page():
 def analyze_run():
     manifest = load_manifest()
     by_file = {r["file"]: r for r in manifest}
+    audio_dir = get_audio_dir()
 
     action = request.form.get("action", "")
 
@@ -419,7 +630,7 @@ def analyze_run():
         group = action.split(":", 1)[1]
         targets = [f for f, r in by_file.items() if r["classification"] == group and _needs_analysis(r)]
     elif action == "stale":
-        targets = [f for f, r in by_file.items() if r.get("analysis") and analysis_is_stale(r["analysis"], AUDIO_DIR / f)]
+        targets = [f for f, r in by_file.items() if r.get("analysis") and analysis_is_stale(r["analysis"], audio_dir / f)]
     elif action == "selected":
         targets = [f for f in request.form.getlist("selected_files") if f in by_file]
     elif action == "reanalyze_selected":
@@ -430,7 +641,7 @@ def analyze_run():
     results = {"analyzed": [], "failed": []}
     for filename in targets:
         record = by_file[filename]
-        analysis = run_analysis(AUDIO_DIR / filename)
+        analysis = run_analysis(audio_dir / filename)
         record["analysis"] = analysis
         if analysis["status"] == "analyzed":
             results["analyzed"].append(filename)
@@ -469,4 +680,3 @@ for slug, label, path in TOOLS:
 
 if __name__ == "__main__":
     app.run(debug=True)
-

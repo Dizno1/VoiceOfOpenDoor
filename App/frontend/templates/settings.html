@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Settings - VoiceOfOpenDoor{% endblock %}
+{% block content %}
+<h1>Settings</h1>
+
+{% if status_message %}
+<p id="status-message" tabindex="-1">{{ status_message }}</p>
+{% endif %}
+
+<section>
+    <h2>Local Data</h2>
+    <ul>
+        <li>Data folder: {{ data_root }}</li>
+        <li>Available: {% if status.exists %}Yes{% else %}No{% endif %}</li>
+        <li>Writable: {% if status.writable %}Yes{% else %}No{% endif %}</li>
+        {% if counts %}
+        <li>Recordings: {{ counts.recordings }}</li>
+        <li>Transcripts: {{ counts.transcripts }}</li>
+        <li>Segments: {{ counts.segments }}</li>
+        <li>Models: {{ counts.models }}</li>
+        {% endif %}
+    </ul>
+
+    <form method="post" action="{{ url_for('settings_validate') }}">
+        <button type="submit">Validate Data Folder</button>
+    </form>
+    <form method="post" action="{{ url_for('settings_open_folder') }}">
+        <button type="submit">Open Data Folder</button>
+    </form>
+    <p><button type="button" class="as-link" data-href="{{ url_for('setup_page') }}">Change Data Folder</button></p>
+</section>
+{% endblock %}

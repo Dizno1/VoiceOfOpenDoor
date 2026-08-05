@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Migrate Existing Recordings - VoiceOfOpenDoor{% endblock %}
+{% block content %}
+<h1 id="status-message" tabindex="-1">Migrate Existing Recordings</h1>
+
+<p>{{ count }} recording{% if count != 1 %}s{% endif %} found in the old location inside this repository. Your data folder is now configured separately - choose what to do with these.</p>
+
+<section>
+    <h2>Recordings Found</h2>
+    <ul>
+        {% for f in legacy_files %}
+        <li>{{ f.name }}</li>
+        {% endfor %}
+    </ul>
+</section>
+
+<section>
+    <h2>Choose an Action</h2>
+    <form method="post" action="{{ url_for('setup_migrate_run') }}">
+        <p><button type="submit" name="mode" value="move">Move Recordings to the Data Folder</button></p>
+        <p>Copies each file to the data folder, verifies the copy matches exactly, and only then removes the original from the repository. Nothing is removed if verification fails.</p>
+
+        <p><button type="submit" name="mode" value="copy">Copy Recordings to the Data Folder</button></p>
+        <p>Copies each file to the data folder and leaves the originals in the repository folder untouched.</p>
+
+        <p><button type="submit" name="mode" value="skip">Skip For Now</button></p>
+        <p>Leaves everything as it is. You can migrate later - these files will still be detected.</p>
+    </form>
+</section>
+{% endblock %}

@@ -32,4 +32,19 @@
     {% endif %}
 </section>
 {% endfor %}
+
+{% if archived %}
+<section>
+    <h2>Archived ({{ archived|length }})</h2>
+    <p>Retained locally, removed from the active workflow.</p>
+    <ul>
+        {% for r in archived %}
+        <li>
+            <button type="button" class="as-link" data-href="{{ url_for('recording_detail', filename=r.file) }}">{{ r.file }}</button>
+            &mdash; {{ r.duration_natural }}
+        </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
 {% endblock %}

@@ -90,18 +90,21 @@ def build_manifest(analyze_report_path: Path, existing_manifest_path: Path = Non
             note = existing.get("note")
             user_notes = existing.get("user_notes", "")
             analysis = existing.get("analysis")
+            status = existing.get("status", "Active")
         else:
             classification, note = CLASSIFICATIONS.get(
                 filename, ("Not Yet Classified", "No assessment entry found for this file.")
             )
             user_notes = ""
             analysis = None
+            status = "Active"
 
         manifest.append({
             "file": filename,
             "duration_natural": natural_duration(entry.get("duration_seconds", 0)),
             "duration_seconds": entry.get("duration_seconds"),
             "classification": classification,
+            "status": status,
             "note": note,
             "user_notes": user_notes,
             "objective_flags": entry.get("flags", []),

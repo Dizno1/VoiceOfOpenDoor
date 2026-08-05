@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{% if is_reconfigure %}Change Data Folder{% else %}Set Up VoiceOfOpenDoor{% endif %} - VoiceOfOpenDoor{% endblock %}
+{% block content %}
+<h1 id="status-message" tabindex="-1">{% if is_reconfigure %}Change Data Folder{% else %}Set Up VoiceOfOpenDoor{% endif %}</h1>
+
+{% if not is_reconfigure %}
+<p>VoiceOfOpenDoor keeps your recordings, transcripts, segments, and models outside this repository, in a folder you choose. This keeps your private material separate from the application code, which is published on GitHub.</p>
+{% else %}
+<p>Choose a different folder for your recordings, transcripts, segments, and models. Your existing data stays where it is - it is not moved automatically.</p>
+{% endif %}
+
+{% if error_message %}
+<p>Problem: {{ error_message }}</p>
+{% endif %}
+
+{% if status.configured and not (status.exists and status.writable) %}
+<p>The currently configured folder is not available: {{ status.error }}</p>
+{% endif %}
+
+<section>
+    <h2>Choose a Folder</h2>
+    <p>Enter the full path to an existing folder, or a new folder to create. Subfolders for recordings, transcripts, segments, and models will be created inside it automatically.</p>
+    <form method="post" action="{{ url_for('setup_confirm') }}">
+        <label for="data-root-input">Data folder path</label>
+        <input type="text" id="data-root-input" name="data_root" value="{{ current_path }}" size="60">
+        <button type="submit">Confirm Folder</button>
+    </form>
+    {% if is_reconfigure %}
+    <p><button type="button" class="as-link" data-href="{{ url_for('settings_page') }}">Cancel</button></p>
+    {% endif %}
+</section>
+{% endblock %}
