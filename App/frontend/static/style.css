@@ -1,0 +1,59 @@
+/* VoiceOfOpenDoor - app-specific additions layered on top of the shared
+   Open Door Design system (odd-theme.css, odd-layout.css,
+   odd-components.css, odd-utilities.css - see App/README.md).
+   Only things not already covered by the shared system belong here. */
+
+/* The shared .nav-list styling in odd-layout.css targets `.nav-list a`.
+   This app uses <button class="as-link"> instead of <a> for internal
+   navigation (JAWS link-list declutter - see App/README.md), so the
+   same visual/interaction rules are mirrored onto .as-link here rather
+   than duplicated wholesale. */
+.nav-list .as-link {
+    display: inline-block;
+    min-height: var(--odd-touch-target);
+    padding: 0.7rem 0.9rem;
+    border: 2px solid transparent;
+    border-radius: var(--odd-radius-md);
+    color: var(--odd-color-text);
+    background: none;
+    text-decoration: none;
+    cursor: pointer;
+    font: inherit;
+}
+.nav-list .as-link:hover,
+.nav-list .as-link:focus-visible {
+    border-color: var(--odd-color-focus);
+    background: var(--odd-color-surface-alt);
+    color: var(--odd-color-text);
+}
+.nav-list li[aria-current="page"] .as-link {
+    border-color: var(--odd-color-focus);
+    background: var(--odd-color-surface-alt);
+    color: var(--odd-color-text);
+    font-weight: 700;
+}
+
+/* Plain-text-styled buttons used for recording list items, Return to
+   Recordings, etc. - same visual treatment as a standard link, since
+   they replace <a> for the same reason as the nav buttons above. */
+.as-link {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--odd-color-link);
+    text-decoration: underline;
+    cursor: pointer;
+    font: inherit;
+}
+
+#status-message {
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--odd-color-focus);
+    background: var(--odd-color-surface-alt);
+    border-radius: var(--odd-radius-md);
+    margin-block-end: 1rem;
+}
+
+section {
+    margin-block-end: 2rem;
+}

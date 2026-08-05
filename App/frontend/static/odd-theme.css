@@ -1,0 +1,130 @@
+/* Open Door Design Phase 1 theme tokens.
+   Internal targets exceed WCAG AA: normal text aims for 7:1 contrast,
+   large text and user interface components aim for at least 4.5:1. */
+:root {
+  color-scheme: light;
+  --odd-color-background: #F7FBF8;
+  --odd-color-surface: #FFFFFF;
+  --odd-color-surface-alt: #EAF3ED;
+  --odd-color-panel: #FFFFFF;
+  --odd-color-text: #111111;
+  --odd-color-text-muted: #2F3437;
+  --odd-color-heading: #111111;
+  --odd-color-primary: #0B5D3B;
+  --odd-color-primary-dark: #08452C;
+  --odd-color-secondary: #3B3B3B;
+  --odd-color-secondary-dark: #111111;
+  --odd-color-link: #0B5D3B;
+  --odd-color-link-visited: #5A2A82;
+  --odd-color-focus: #8A5A00;
+  --odd-color-warning: #8A5A00;
+  --odd-color-error: #8F1D16;
+  --odd-color-success: #0B5D3B;
+  --odd-color-border: #6E7B82;
+  --odd-color-border-soft: #B9C5CB;
+  --odd-shadow-soft: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.10);
+  --odd-radius-sm: 0.375rem;
+  --odd-radius-md: 0.75rem;
+  --odd-radius-lg: 1rem;
+  --odd-space-1: 0.25rem;
+  --odd-space-2: 0.5rem;
+  --odd-space-3: 0.75rem;
+  --odd-space-4: 1rem;
+  --odd-space-5: 1.5rem;
+  --odd-space-6: 2rem;
+  --odd-space-7: 3rem;
+  --odd-section-max: 74rem;
+  --odd-readable-max: 72ch;
+  --odd-touch-target: 3rem;
+  --edge-pad: clamp(1rem, 3vw, 2rem);
+  --section-max: var(--odd-section-max);
+  --text: var(--odd-color-text);
+  --bg: var(--odd-color-background);
+  --panel: var(--odd-color-panel);
+  --soft-bg: var(--odd-color-surface-alt);
+  --soft-green: var(--odd-color-surface-alt);
+  --deep-green: var(--odd-color-primary);
+  --deep-red: var(--odd-color-error);
+  --interactive-color: var(--odd-color-link);
+  --warm-gold: var(--odd-color-focus);
+  --border: var(--odd-color-border);
+  --divider: var(--odd-color-border-soft);
+  --focus-ring: var(--odd-color-focus);
+  --card-border: var(--odd-color-border);
+  --logo-max-h: 120px;
+  --home-max-h: 36px;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  font-size: 100%;
+  scroll-behavior: smooth;
+  overflow-wrap: anywhere;
+}
+
+body {
+  margin: 0;
+  min-width: 0;
+  background: var(--odd-color-background);
+  color: var(--odd-color-text);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+img, svg, video, canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--odd-color-heading);
+  line-height: 1.2;
+  margin-block: 0 0.75rem;
+}
+
+h1 { font-size: clamp(2rem, 6vw, 3.5rem); }
+h2 { font-size: clamp(1.55rem, 4vw, 2.25rem); }
+h3 { font-size: clamp(1.25rem, 3vw, 1.6rem); }
+
+p, ul, ol, dl { margin-block: 0 1rem; }
+ul, ol { padding-inline-start: 1.5rem; }
+li + li { margin-block-start: 0.35rem; }
+
+a {
+  color: var(--odd-color-link);
+  text-decoration: underline;
+  text-decoration-thickness: 0.12em;
+  text-underline-offset: 0.18em;
+}
+a:visited { color: var(--odd-color-link-visited); }
+a:hover { text-decoration-thickness: 0.18em; }
+
+:focus { outline: none; }
+:focus-visible,
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--odd-color-focus);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px #FFFFFF;
+}
+
+::selection {
+  background: var(--odd-color-secondary);
+  color: #FFFFFF;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

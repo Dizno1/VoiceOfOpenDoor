@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ tool_label }} - VoiceOfOpenDoor{% endblock %}
+{% block content %}
+<h1>{{ tool_label }}</h1>
+
+<p>Not yet built.</p>
+<p>{{ description }}</p>
+<p><button type="button" class="as-link" data-href="{{ url_for('home') }}">Back to Home</button></p>
+{% endblock %}

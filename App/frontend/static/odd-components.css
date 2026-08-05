@@ -1,0 +1,138 @@
+/* Open Door Design shared components. */
+button,
+.button,
+a.button,
+.secondary,
+.srf-button-link,
+.ecb-btn {
+  min-height: var(--odd-touch-target);
+  min-width: var(--odd-touch-target);
+  border-radius: var(--odd-radius-md);
+  border: 2px solid var(--odd-color-primary);
+  background: var(--odd-color-primary);
+  color: #FFFFFF;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  text-decoration: none;
+}
+button:hover, .button:hover, .srf-button-link:hover {
+  background: var(--odd-color-primary-dark);
+  border-color: var(--odd-color-primary-dark);
+}
+.secondary {
+  background: var(--odd-color-surface);
+  color: var(--odd-color-secondary);
+  border-color: var(--odd-color-secondary);
+}
+.secondary:hover { background: var(--odd-color-surface-alt); }
+button[disabled], [aria-disabled="true"] {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+input, select, textarea {
+  width: 100%;
+  min-height: var(--odd-touch-target);
+  border: 2px solid var(--odd-color-border);
+  border-radius: var(--odd-radius-md);
+  color: var(--odd-color-text);
+  background: #FFFFFF;
+  font: inherit;
+  padding: 0.65rem 0.75rem;
+}
+label { font-weight: 700; display: block; margin-block: 0.75rem 0.25rem; }
+
+.card, .callout, .status, .kvl, .carousel, .srf-carousel-shell {
+  background: var(--odd-color-surface);
+  border: 2px solid var(--odd-color-border-soft);
+  border-radius: var(--odd-radius-lg);
+  box-shadow: var(--odd-shadow-soft);
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+.card h2, .card h3 { margin-block-start: 0; }
+.project-meta { color: var(--odd-color-text-muted); font-weight: 700; }
+
+.kvl { margin-block: 1rem; }
+.kvl dt { font-weight: 700; color: var(--odd-color-heading); }
+.kvl dd { margin-inline-start: 0; margin-block-end: 0.75rem; }
+
+.callout {
+  border-color: var(--odd-color-primary);
+  background: var(--odd-color-surface-alt);
+}
+
+.status {
+  border-color: var(--odd-color-focus);
+  background: #FFF8E6;
+}
+
+/* Home and accessible carousel patterns. */
+.srf-carousel-region { margin-block: 2rem; }
+.srf-carousel-instructions { max-width: var(--odd-readable-max); }
+.srf-carousel-controls, .srf-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-block: 1rem;
+}
+.srf-slides { min-width: 0; }
+.srf-slide, .slide { display: none; }
+.srf-slide.active, .slide.active { display: block; }
+.srf-slide-summary { font-size: 1.1rem; }
+.srf-slide-visual, .founding, .has-visual { text-align: center; }
+.srf-slide-count, .srf-status-line { font-weight: 700; }
+
+.carousel { margin-block: 1rem; }
+.carousel button { margin-inline-end: 0.5rem; margin-block-end: 0.5rem; }
+
+/* Accessible video player baseline. */
+.ecb-player {
+  background: #000000;
+  border-radius: var(--odd-radius-lg);
+  overflow: hidden;
+}
+.ecb-video-wrap { position: relative; }
+.ecb-video { display: block; width: 100%; background: #000000; }
+.ecb-controls, .ecb-transcript-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  background: var(--odd-color-secondary-dark);
+  color: #FFFFFF;
+  padding: 0.75rem;
+}
+.ecb-tooltip {
+  background: var(--odd-color-secondary-dark);
+  color: #FFFFFF;
+  border: 1px solid #FFFFFF;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--odd-radius-sm);
+}
+.ecb-transcript-drawer {
+  background: var(--odd-color-surface);
+  color: var(--odd-color-text);
+  border: 2px solid var(--odd-color-border);
+  border-radius: var(--odd-radius-lg);
+  margin-block-start: 1rem;
+}
+.ecb-transcript-scroll { max-height: 18rem; overflow: auto; padding: 1rem; }
+
+@media (max-width: 30rem) {
+  .srf-carousel-controls, .srf-button-row, .ecb-controls, .ecb-transcript-bar { display: grid; }
+  .srf-carousel-controls > *, .srf-button-row > *, .ecb-controls > *, .ecb-transcript-bar > * { width: 100%; }
+}
+
+/* Carousel controls are links so JAWS Browse Mode can activate them without Forms Mode. */
+.srf-carousel-control {
+  display: inline-block;
+  text-decoration: none;
+  cursor: pointer;
+}

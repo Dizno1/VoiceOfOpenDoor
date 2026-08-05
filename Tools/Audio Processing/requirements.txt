@@ -1,0 +1,5 @@
+faster-whisper
+silero-vad
+pyannote.audio
+soundfile
+numpy

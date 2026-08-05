@@ -1,0 +1,224 @@
+[
+  {
+    "file": "EditedSection 508-Submit An Issue August 26 2024-audio.m4a",
+    "duration_natural": "1 minute 6 seconds",
+    "duration_seconds": 65.8,
+    "classification": "Conditional Candidate",
+    "note": "Usable after cleanup (Assessment v1).",
+    "user_notes": "this recording is a bit loud, and there is a brief jump hthat should be edited out, but I think it is ok.",
+    "objective_flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1105962106.m4a",
+    "duration_natural": "39 seconds",
+    "duration_seconds": 39.13,
+    "classification": "Conditional Candidate",
+    "note": "Usable after cleanup (Assessment v1).",
+    "user_notes": "",
+    "objective_flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1286992121.m4a",
+    "duration_natural": "1 minute 2 seconds",
+    "duration_seconds": 61.89,
+    "classification": "Conditional Candidate",
+    "note": "Usable after cleanup (Assessment v1).",
+    "user_notes": "",
+    "objective_flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1303953228.m4a",
+    "duration_natural": "14 seconds",
+    "duration_seconds": 13.95,
+    "classification": "Candidate",
+    "note": "Strong technical candidate (Assessment v1).",
+    "user_notes": "the first second or so is a little garbled and should be trimmed.",
+    "objective_flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1377890889.m4a",
+    "duration_natural": "59 seconds",
+    "duration_seconds": 58.87,
+    "classification": "Conditional Candidate",
+    "note": "Usable after cleanup (Assessment v1).",
+    "user_notes": "",
+    "objective_flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1467666570.m4a",
+    "duration_natural": "2 minutes 56 seconds",
+    "duration_seconds": 176.17,
+    "classification": "Conditional Candidate",
+    "note": "Usable after cleanup (Assessment v1).",
+    "user_notes": "",
+    "objective_flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1521603543.m4a",
+    "duration_natural": "37 seconds",
+    "duration_seconds": 37.34,
+    "classification": "Conditional Candidate",
+    "note": "Usable after cleanup (Assessment v1).",
+    "user_notes": "",
+    "objective_flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1559462767.m4a",
+    "duration_natural": "1 minute 10 seconds",
+    "duration_seconds": 69.68,
+    "classification": "Conditional Candidate",
+    "note": "Usable after cleanup (Assessment v1).",
+    "user_notes": "",
+    "objective_flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1655457179.m4a",
+    "duration_natural": "44 seconds",
+    "duration_seconds": 44.33,
+    "classification": "Candidate",
+    "note": "Strong technical candidate (Assessment v1).",
+    "user_notes": "",
+    "objective_flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1948085081.m4a",
+    "duration_natural": "33 seconds",
+    "duration_seconds": 32.53,
+    "classification": "Evaluation Only",
+    "note": "Comparatively weaker estimated SNR - not yet listened for room noise.",
+    "user_notes": "",
+    "objective_flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1961666103.m4a",
+    "duration_natural": "1 minute 3 seconds",
+    "duration_seconds": 63.14,
+    "classification": "Conditional Candidate",
+    "note": "Usable after cleanup (Assessment v1).",
+    "user_notes": "",
+    "objective_flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio2013336627.m4a",
+    "duration_natural": "1 minute 38 seconds",
+    "duration_seconds": 97.98,
+    "classification": "Candidate",
+    "note": "Strong technical candidate (Assessment v1).",
+    "user_notes": "",
+    "objective_flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio2303953228.m4a",
+    "duration_natural": "50 seconds",
+    "duration_seconds": 50.39,
+    "classification": "Candidate",
+    "note": "Strong technical candidate (Assessment v1).",
+    "user_notes": "",
+    "objective_flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio2655457179.m4a",
+    "duration_natural": "2 minutes 14 seconds",
+    "duration_seconds": 133.77,
+    "classification": "Evaluation Only",
+    "note": "Comparatively lower estimated SNR - not yet listened for background/room tone.",
+    "user_notes": "",
+    "objective_flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "RecUpVoiceOfOpenDoorTest.mp3",
+    "duration_natural": "6 minutes 31 seconds",
+    "duration_seconds": 390.92,
+    "classification": "Candidate",
+    "note": "Natural conversational speech, consistent level, no disqualifying noise. Longest recording in the corpus - requires segmentation before training (Assessment v2).",
+    "user_notes": "",
+    "objective_flags": [
+      "Max volume at or near 0 dB ceiling - verify no clipping/limiting by ear."
+    ]
+  },
+  {
+    "file": "UnscriptedRecordingsForTTS.m4a",
+    "duration_natural": "1 minute 28 seconds",
+    "duration_seconds": 88.06,
+    "classification": "Conditional Candidate",
+    "note": "Usable after cleanup (Assessment v1).",
+    "user_notes": "",
+    "objective_flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "VRStreamHeadphone.mp3",
+    "duration_natural": "17 seconds",
+    "duration_seconds": 17.27,
+    "classification": "Evaluation Only",
+    "note": "Purpose not yet confirmed - suspected Victor Reader Stream recording-method comparison (Assessment v2).",
+    "user_notes": "",
+    "objective_flags": [
+      "Low bitrate (32105 bps) relative to rest of corpus - check for compression artifacts."
+    ]
+  },
+  {
+    "file": "VictorStreamTestNoHeadPhones.mp3",
+    "duration_natural": "10 seconds",
+    "duration_seconds": 10.48,
+    "classification": "Evaluation Only",
+    "note": "Purpose not yet confirmed - suspected Victor Reader Stream recording-method comparison (Assessment v2).",
+    "user_notes": "",
+    "objective_flags": [
+      "Max volume at or near 0 dB ceiling - verify no clipping/limiting by ear."
+    ]
+  },
+  {
+    "file": "Editedaudio1407063783.m4a",
+    "duration_natural": "55 seconds",
+    "duration_seconds": 55.12,
+    "classification": "Evaluation Only",
+    "note": "Imported via Add Recordings (re-imported after an earlier deletion). Not yet reviewed. Manifest entry was missing and was repaired during Analyze feature development, July 30 2026 - see changelog.",
+    "user_notes": "",
+    "objective_flags": [
+      "Max volume at or near 0 dB ceiling - verify no clipping/limiting by ear."
+    ],
+    "analysis": null
+  },
+  {
+    "file": "RecUpAppTest Recording.mp3",
+    "duration_natural": "18 seconds",
+    "duration_seconds": 17.61,
+    "classification": "Evaluation Only",
+    "note": "Imported via Add Recordings (re-imported after an earlier deletion). Not yet reviewed. Manifest entry was missing and was repaired during Analyze feature development, July 30 2026 - see changelog.",
+    "user_notes": "",
+    "objective_flags": [
+      "Low mean volume - possible distant mic or quiet source; verify usable SNR by ear."
+    ],
+    "analysis": null
+  }
+]

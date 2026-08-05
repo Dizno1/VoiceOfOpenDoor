@@ -1,0 +1,302 @@
+[
+  {
+    "file": "EditedSection 508-Submit An Issue August 26 2024-audio.m4a",
+    "duration_seconds": 65.8,
+    "size_bytes": 669061,
+    "bit_rate": 81348,
+    "codec": "aac",
+    "sample_rate": "48000",
+    "channels": 2,
+    "mean_volume_db": -23.0,
+    "max_volume_db": -3.5,
+    "silence_segment_count": 13,
+    "flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1105962106.m4a",
+    "duration_seconds": 39.13,
+    "size_bytes": 373166,
+    "bit_rate": 76301,
+    "codec": "aac",
+    "sample_rate": "48000",
+    "channels": 2,
+    "mean_volume_db": -26.3,
+    "max_volume_db": -6.8,
+    "silence_segment_count": 16,
+    "flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1286992121.m4a",
+    "duration_seconds": 61.89,
+    "size_bytes": 984630,
+    "bit_rate": 127283,
+    "codec": "aac",
+    "sample_rate": "32000",
+    "channels": 1,
+    "mean_volume_db": -23.6,
+    "max_volume_db": -2.6,
+    "silence_segment_count": 20,
+    "flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1303953228.m4a",
+    "duration_seconds": 13.95,
+    "size_bytes": 222564,
+    "bit_rate": 127616,
+    "codec": "aac",
+    "sample_rate": "32000",
+    "channels": 1,
+    "mean_volume_db": -21.6,
+    "max_volume_db": -2.9,
+    "silence_segment_count": 4,
+    "flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1377890889.m4a",
+    "duration_seconds": 58.87,
+    "size_bytes": 572087,
+    "bit_rate": 77740,
+    "codec": "aac",
+    "sample_rate": "48000",
+    "channels": 2,
+    "mean_volume_db": -23.6,
+    "max_volume_db": -2.8,
+    "silence_segment_count": 17,
+    "flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1407063783.m4a",
+    "duration_seconds": 55.12,
+    "size_bytes": 533062,
+    "bit_rate": 77370,
+    "codec": "aac",
+    "sample_rate": "48000",
+    "channels": 2,
+    "mean_volume_db": -22.8,
+    "max_volume_db": -0.4,
+    "silence_segment_count": 13,
+    "flags": [
+      "Max volume at or near 0 dB ceiling - verify no clipping/limiting by ear."
+    ]
+  },
+  {
+    "file": "Editedaudio1467666570.m4a",
+    "duration_seconds": 176.17,
+    "size_bytes": 1713347,
+    "bit_rate": 77805,
+    "codec": "aac",
+    "sample_rate": "48000",
+    "channels": 2,
+    "mean_volume_db": -24.0,
+    "max_volume_db": -0.9,
+    "silence_segment_count": 51,
+    "flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1521603543.m4a",
+    "duration_seconds": 37.34,
+    "size_bytes": 594241,
+    "bit_rate": 127298,
+    "codec": "aac",
+    "sample_rate": "32000",
+    "channels": 1,
+    "mean_volume_db": -22.9,
+    "max_volume_db": -3.8,
+    "silence_segment_count": 14,
+    "flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1559462767.m4a",
+    "duration_seconds": 69.68,
+    "size_bytes": 1107829,
+    "bit_rate": 127198,
+    "codec": "aac",
+    "sample_rate": "32000",
+    "channels": 1,
+    "mean_volume_db": -24.9,
+    "max_volume_db": -2.8,
+    "silence_segment_count": 22,
+    "flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1655457179.m4a",
+    "duration_seconds": 44.33,
+    "size_bytes": 434493,
+    "bit_rate": 78405,
+    "codec": "aac",
+    "sample_rate": "48000",
+    "channels": 2,
+    "mean_volume_db": -22.2,
+    "max_volume_db": -4.0,
+    "silence_segment_count": 13,
+    "flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1948085081.m4a",
+    "duration_seconds": 32.53,
+    "size_bytes": 322969,
+    "bit_rate": 79418,
+    "codec": "aac",
+    "sample_rate": "48000",
+    "channels": 2,
+    "mean_volume_db": -24.0,
+    "max_volume_db": -3.6,
+    "silence_segment_count": 9,
+    "flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio1961666103.m4a",
+    "duration_seconds": 63.14,
+    "size_bytes": 1002992,
+    "bit_rate": 127079,
+    "codec": "aac",
+    "sample_rate": "32000",
+    "channels": 1,
+    "mean_volume_db": -23.5,
+    "max_volume_db": -1.6,
+    "silence_segment_count": 18,
+    "flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio2013336627.m4a",
+    "duration_seconds": 97.98,
+    "size_bytes": 988731,
+    "bit_rate": 80729,
+    "codec": "aac",
+    "sample_rate": "48000",
+    "channels": 2,
+    "mean_volume_db": -22.5,
+    "max_volume_db": -3.6,
+    "silence_segment_count": 28,
+    "flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio2303953228.m4a",
+    "duration_seconds": 50.39,
+    "size_bytes": 799771,
+    "bit_rate": 126974,
+    "codec": "aac",
+    "sample_rate": "32000",
+    "channels": 1,
+    "mean_volume_db": -23.0,
+    "max_volume_db": -2.1,
+    "silence_segment_count": 11,
+    "flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "Editedaudio2655457179.m4a",
+    "duration_seconds": 133.77,
+    "size_bytes": 1386064,
+    "bit_rate": 82889,
+    "codec": "aac",
+    "sample_rate": "48000",
+    "channels": 2,
+    "mean_volume_db": -21.8,
+    "max_volume_db": -2.1,
+    "silence_segment_count": 22,
+    "flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "RecUpAppTest Recording.mp3",
+    "duration_seconds": 17.61,
+    "size_bytes": 175910,
+    "bit_rate": 79929,
+    "codec": "mp3",
+    "sample_rate": "44100",
+    "channels": 1,
+    "mean_volume_db": -32.0,
+    "max_volume_db": -10.3,
+    "silence_segment_count": 6,
+    "flags": [
+      "Low mean volume - possible distant mic or quiet source; verify usable SNR by ear."
+    ]
+  },
+  {
+    "file": "RecUpVoiceOfOpenDoorTest.mp3",
+    "duration_seconds": 390.92,
+    "size_bytes": 3994408,
+    "bit_rate": 81743,
+    "codec": "mp3",
+    "sample_rate": "44100",
+    "channels": 1,
+    "mean_volume_db": -24.3,
+    "max_volume_db": 0.0,
+    "silence_segment_count": 126,
+    "flags": [
+      "Max volume at or near 0 dB ceiling - verify no clipping/limiting by ear."
+    ]
+  },
+  {
+    "file": "UnscriptedRecordingsForTTS.m4a",
+    "duration_seconds": 88.06,
+    "size_bytes": 839590,
+    "bit_rate": 76278,
+    "codec": "aac",
+    "sample_rate": "48000",
+    "channels": 2,
+    "mean_volume_db": -24.0,
+    "max_volume_db": -3.3,
+    "silence_segment_count": 25,
+    "flags": [
+      "No objective flags raised. Still requires subjective listening pass per Phase 3."
+    ]
+  },
+  {
+    "file": "VRStreamHeadphone.mp3",
+    "duration_seconds": 17.27,
+    "size_bytes": 69295,
+    "bit_rate": 32105,
+    "codec": "mp3",
+    "sample_rate": "44100",
+    "channels": 1,
+    "mean_volume_db": -13.1,
+    "max_volume_db": -8.0,
+    "silence_segment_count": 0,
+    "flags": [
+      "Low bitrate (32105 bps) relative to rest of corpus - check for compression artifacts."
+    ]
+  },
+  {
+    "file": "VictorStreamTestNoHeadPhones.mp3",
+    "duration_seconds": 10.48,
+    "size_bytes": 126059,
+    "bit_rate": 96273,
+    "codec": "mp3",
+    "sample_rate": "44100",
+    "channels": 1,
+    "mean_volume_db": -14.6,
+    "max_volume_db": 0.0,
+    "silence_segment_count": 0,
+    "flags": [
+      "Max volume at or near 0 dB ceiling - verify no clipping/limiting by ear."
+    ]
+  }
+]

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Analyze Results - VoiceOfOpenDoor{% endblock %}
+{% block content %}
+<h1 id="status-message" tabindex="-1">Analyze Results</h1>
+
+<p>
+    {{ target_count }} recordings selected:
+    {{ results.analyzed|length }} analyzed,
+    {{ results.failed|length }} failed.
+</p>
+
+{% if results.analyzed %}
+<section>
+    <h2>Analyzed ({{ results.analyzed|length }})</h2>
+    <ul>
+        {% for file in results.analyzed %}
+        <li><button type="button" class="as-link" data-href="{{ url_for('recording_detail', filename=file) }}">{{ file }}</button></li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+{% if results.failed %}
+<section>
+    <h2>Failed ({{ results.failed|length }})</h2>
+    <ul>
+        {% for item in results.failed %}
+        <li>{{ item.file }} &mdash; {{ item.reason }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+<p><button type="button" class="as-link" data-href="{{ url_for('analyze_page') }}">Return to Analyze</button></p>
+{% endblock %}

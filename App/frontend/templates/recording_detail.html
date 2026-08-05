@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}{{ r.file }} - VoiceOfOpenDoor{% endblock %}
+{% block content %}
+<h1>{{ r.file }}</h1>
+
+<p><button type="button" class="as-link" data-href="{{ url_for('recordings_screen') }}">Return to Recordings</button></p>
+
+{% if status_message %}
+<p id="status-message" tabindex="-1">{{ status_message }}</p>
+{% endif %}
+
+<section>
+    <h2>Details</h2>
+    <ul>
+        <li>Duration: {{ r.duration_natural }}</li>
+        <li>Classification: {{ r.classification }}</li>
+    </ul>
+</section>
+
+<section>
+    <h2>Basis</h2>
+    <p>{{ r.note }}</p>
+</section>
+
+{% if r.objective_flags %}
+<section>
+    <h2>Objective Notes</h2>
+    <ul>
+        {% for flag in r.objective_flags %}
+        <li>{{ flag }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+<section>
+    <h2>Analysis</h2>
+    {% if r.analysis %}
+        <p>Status: {{ r.analysis.status }}. Last analyzed: {{ analyzed_at_natural }}.</p>
+        {% if analysis_stale %}
+        <p>The source audio file has changed since this analysis ran. Consider running analysis again.</p>
+        {% endif %}
+        {% if r.analysis.status == "analyzed" %}
+        <ul>
+            <li>Duration: {{ r.analysis.duration_natural }}</li>
+            <li>Format/codec: {{ r.analysis.codec }}</li>
+            <li>Sample rate: {{ r.analysis.sample_rate }}</li>
+            <li>Channels: {{ r.analysis.channels }}</li>
+            <li>File size: {{ r.analysis.file_size_bytes }} bytes</li>
+            <li>Mean volume: {{ r.analysis.mean_volume_db }} dB</li>
+            <li>Peak volume: {{ r.analysis.max_volume_db }} dB</li>
+            <li>Silence segments detected: {{ r.analysis.silence_segment_count }}</li>
+        </ul>
+        {% if r.analysis.objective_flags %}
+        <p>Objective finding{% if r.analysis.objective_flags|length != 1 %}s{% endif %}:</p>
+        <ul>
+            {% for flag in r.analysis.objective_flags %}
+            <li>{{ flag }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <p>This is an objective finding, not a final decision - human review status is tracked separately via Classification and Notes above.</p>
+        {% else %}
+        <p>Analysis failed: {{ r.analysis.error }}</p>
+        {% endif %}
+    {% else %}
+        <p>Not yet analyzed.</p>
+    {% endif %}
+    <form method="post" action="{{ url_for('analyze_run') }}">
+        <input type="hidden" name="action" value="selected">
+        <input type="hidden" name="selected_files" value="{{ r.file }}">
+        <input type="hidden" name="return_to" value="detail">
+        <button type="submit">{% if r.analysis %}Re-run Analysis{% else %}Run Analysis{% endif %}</button>
+    </form>
+</section>
+
+<section>
+    <h2>Play Recording</h2>
+    <audio controls src="{{ url_for('audio_file', filename=r.file) }}">
+        Your browser does not support audio playback. The file is at {{ url_for('audio_file', filename=r.file) }}.
+    </audio>
+</section>
+
+<section>
+    <h2>Change Classification</h2>
+    <form method="post" action="{{ url_for('update_classification', filename=r.file) }}">
+        <label for="classification-select">Classification</label>
+        <select id="classification-select" name="classification">
+            {% for option in classification_options %}
+            <option value="{{ option }}"{% if option == r.classification %} selected{% endif %}>{{ option }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Save Classification</button>
+    </form>
+    <p>Changing classification is also how a recording is moved between categories (for example, restoring a Rejected recording to Evaluation Only) - there is a single control for this rather than a separate "restore" button, so there is only one way to do it.</p>
+</section>
+
+<section>
+    <h2>Notes</h2>
+    <form method="post" action="{{ url_for('update_notes', filename=r.file) }}">
+        <label for="notes-field">Your notes about this recording</label>
+        <textarea id="notes-field" name="user_notes" rows="4" cols="60">{{ r.user_notes }}</textarea>
+        <button type="submit">Save Notes</button>
+    </form>
+</section>
+
+<section>
+    <h2>Delete Recording</h2>
+    <p>This permanently removes the audio file and its metadata. This cannot be undone.</p>
+    <form method="get" action="{{ url_for('delete_confirm', filename=r.file) }}">
+        <button type="submit">Delete Recording</button>
+    </form>
+</section>
+{% endblock %}

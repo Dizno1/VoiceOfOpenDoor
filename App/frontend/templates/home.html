@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Home - VoiceOfOpenDoor{% endblock %}
+{% block content %}
+<h1>VoiceOfOpenDoor</h1>
+
+<section>
+    <h2>Current Status</h2>
+    <p>
+        {{ summary.total }} recordings total:
+        {% for classification, count in summary.counts.items() %}
+            {{ count }} {{ count_labels.get(classification, classification) }}{{ "; " if not loop.last else "." }}
+        {% endfor %}
+    </p>
+    {% if summary.next_action %}
+    <p>
+        Next recommended action:
+        <button type="button" class="as-link" data-href="{{ url_for('recording_detail', filename=summary.next_action.file) }}">
+            Review {{ summary.next_action.file }} ({{ summary.next_action.duration_natural }})
+        </button>
+    </p>
+    {% else %}
+    <p>No recordings currently need review.</p>
+    {% endif %}
+    <p><button type="button" class="as-link" data-href="{{ url_for('recordings_screen') }}">Browse all recordings</button></p>
+</section>
+{% endblock %}

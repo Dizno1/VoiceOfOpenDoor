@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Analyze Recordings - VoiceOfOpenDoor{% endblock %}
+{% block content %}
+<h1>Analyze Recordings</h1>
+
+<p>Analysis measures each recording objectively - level, clipping risk, silence, format - using the same tool as the command line. It does not judge speech content or make a final decision; it supports your review.</p>
+
+{% if status_message %}
+<p id="status-message" tabindex="-1">{{ status_message }}</p>
+{% endif %}
+
+<section>
+    <h2>Current Status</h2>
+    <p>{{ total }} recordings total: {{ needing_count }} need analysis{% if stale_count %} ({{ stale_count }} because the source file changed since last analysis){% endif %}, {{ analyzed_count }} already analyzed.</p>
+</section>
+
+<form method="post" action="{{ url_for('analyze_run') }}">
+
+<section>
+    <h2>Recordings Needing Analysis ({{ needing_count }})</h2>
+
+    {% if needing_count %}
+    <p><button type="submit" name="action" value="all_needing">Analyze All Needing Analysis</button></p>
+
+    {% if needing_groups %}
+    <p>Or analyze one category at a time:</p>
+    <ul>
+        {% for group in needing_groups %}
+        <li><button type="submit" name="action" value="group:{{ group.key }}">Analyze all {{ group.label }} ({{ group.recordings|length }})</button></li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <p>Or choose specific recordings:</p>
+    <ul>
+        {% for group in needing_groups %}
+        {% for r in group.recordings %}
+        <li>
+            <label>
+                <input type="checkbox" name="selected_files" value="{{ r.file }}">
+                {{ r.file }} ({{ r.duration_natural }}, {{ group.label }})
+            </label>
+        </li>
+        {% endfor %}
+        {% endfor %}
+    </ul>
+    <p>
+        <button type="submit" name="action" value="selected">Analyze Selected</button>
+        <button type="reset">Clear Selection</button>
+    </p>
+    {% else %}
+    <p>Nothing currently needs analysis.</p>
+    {% endif %}
+</section>
+
+<section>
+    <h2>Recordings Already Analyzed ({{ analyzed_count }})</h2>
+    {% if analyzed %}
+    <ul>
+        {% for r in analyzed %}
+        <li>
+            <label><input type="checkbox" name="reanalyze_files" value="{{ r.file }}"> Select {{ r.file }}</label>
+            &mdash;
+            <button type="button" class="as-link" data-href="{{ url_for('recording_detail', filename=r.file) }}">{{ r.file }}</button>
+            &mdash; {{ r._summary }}
+        </li>
+        {% endfor %}
+    </ul>
+    <p><button type="submit" name="action" value="reanalyze_selected">Re-analyze Selected</button></p>
+    {% else %}
+    <p>No recordings analyzed yet.</p>
+    {% endif %}
+</section>
+
+</form>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Add Recordings - VoiceOfOpenDoor{% endblock %}
+{% block content %}
+<h1>Add Recordings</h1>
+
+<p><button type="button" class="as-link" data-href="{{ url_for('recordings_screen') }}">Return to Recordings</button></p>
+
+<p>Supported formats: WAV, MP3, M4A. New recordings are placed in Evaluation Only until reviewed.</p>
+
+<section>
+    <h2>Choose Files</h2>
+    <p>Select one or more individual audio files.</p>
+    <form method="post" action="{{ url_for('import_recordings') }}" enctype="multipart/form-data">
+        <label for="audio-files-input">Audio file or files</label>
+        <input type="file" id="audio-files-input" name="audio_files" accept=".wav,.mp3,.m4a" multiple required>
+        <button type="submit">Import Selected Files</button>
+    </form>
+</section>
+
+<section>
+    <h2>Choose a Folder</h2>
+    <p>Select a folder, and every supported audio file inside it will be imported. Files of other types in the folder are skipped, with a reason, the same as anywhere else. Folder selection requires a Chromium-based browser (Chrome or Edge) - it isn't supported in Firefox or Safari.</p>
+    <form method="post" action="{{ url_for('import_recordings') }}" enctype="multipart/form-data">
+        <label for="audio-folder-input">Folder</label>
+        <input type="file" id="audio-folder-input" name="audio_files" webkitdirectory directory multiple>
+        <button type="submit">Import Folder</button>
+    </form>
+</section>
+{% endblock %}

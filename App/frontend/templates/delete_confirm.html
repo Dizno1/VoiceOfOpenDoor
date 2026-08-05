@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Confirm Delete - VoiceOfOpenDoor{% endblock %}
+{% block content %}
+<h1 id="confirm-heading" tabindex="-1">Confirm Delete</h1>
+
+<p>You are about to permanently delete this recording and its metadata:</p>
+<ul>
+    <li>File: {{ filename }}</li>
+    <li>Classification: {{ classification }}</li>
+</ul>
+<p>This cannot be undone. The audio file will be removed from disk.</p>
+
+<form method="post" action="{{ url_for('delete_recording', filename=filename) }}">
+    <button type="submit">Yes, permanently delete this recording</button>
+</form>
+
+<p><button type="button" class="as-link" data-href="{{ url_for('recording_detail', filename=filename) }}">Cancel and return to this recording</button></p>
+{% endblock %}

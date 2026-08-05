@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Import Results - VoiceOfOpenDoor{% endblock %}
+{% block content %}
+<h1 id="status-message" tabindex="-1">Import Results</h1>
+
+<p>
+    {{ results.imported|length }} imported,
+    {{ results.skipped|length }} skipped,
+    {{ results.failed|length }} failed.
+</p>
+
+{% if results.imported %}
+<section>
+    <h2>Imported ({{ results.imported|length }})</h2>
+    <ul>
+        {% for file in results.imported %}
+        <li>{{ file }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+{% if results.skipped %}
+<section>
+    <h2>Skipped ({{ results.skipped|length }})</h2>
+    <ul>
+        {% for item in results.skipped %}
+        <li>{{ item.file }} &mdash; {{ item.reason }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+{% if results.failed %}
+<section>
+    <h2>Failed ({{ results.failed|length }})</h2>
+    <ul>
+        {% for item in results.failed %}
+        <li>{{ item.file }} &mdash; {{ item.reason }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+<p><button type="button" class="as-link" data-href="{{ url_for('recordings_screen') }}">Return to Recordings</button></p>
+{% endblock %}
