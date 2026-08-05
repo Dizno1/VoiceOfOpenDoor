@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Scan Results - VoiceOfOpenDoor{% endblock %}
+{% block content %}
+<h1 id="status-message" tabindex="-1">Scan Results</h1>
+
+<p>
+    {{ results.found }} files found in Original Recordings:
+    {{ results.added|length }} added,
+    {{ results.already_registered }} already registered,
+    {{ results.unsupported|length }} unsupported,
+    {{ results.damaged|length }} damaged,
+    {{ results.failed|length }} failed.
+</p>
+
+{% if results.added %}
+<section>
+    <h2>Added ({{ results.added|length }})</h2>
+    <ul>
+        {% for file in results.added %}
+        <li><button type="button" class="as-link" data-href="{{ url_for('recording_detail', filename=file) }}">{{ file }}</button></li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+{% if results.unsupported %}
+<section>
+    <h2>Unsupported ({{ results.unsupported|length }})</h2>
+    <ul>
+        {% for item in results.unsupported %}
+        <li>{{ item.file }} &mdash; {{ item.reason }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+{% if results.damaged %}
+<section>
+    <h2>Damaged ({{ results.damaged|length }})</h2>
+    <ul>
+        {% for item in results.damaged %}
+        <li>{{ item.file }} &mdash; {{ item.reason }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+{% if results.failed %}
+<section>
+    <h2>Failed ({{ results.failed|length }})</h2>
+    <ul>
+        {% for item in results.failed %}
+        <li>{{ item.file }} &mdash; {{ item.reason }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+<p><button type="button" class="as-link" data-href="{{ url_for('recordings_screen') }}">Return to Recordings</button></p>
+{% endblock %}

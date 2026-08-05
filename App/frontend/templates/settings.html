@@ -27,6 +27,9 @@
     <form method="post" action="{{ url_for('settings_open_folder') }}">
         <button type="submit">Open Data Folder</button>
     </form>
+    <form method="post" action="{{ url_for('scan_recordings') }}">
+        <button type="submit">Scan Existing Recordings</button>
+    </form>
     <p><button type="button" class="as-link" data-href="{{ url_for('setup_page') }}">Change Data Folder</button></p>
 </section>
 {% endblock %}

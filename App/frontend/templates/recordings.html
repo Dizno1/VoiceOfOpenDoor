@@ -6,6 +6,12 @@
 <section>
     <h2>Add Recordings</h2>
     <p><button type="button" class="as-link" data-href="{{ url_for('import_recordings_form') }}">Add Recordings</button></p>
+    <p>
+        <form method="post" action="{{ url_for('scan_recordings') }}">
+            <button type="submit">Scan Existing Recordings</button>
+        </form>
+    </p>
+    <p>Use this if you copied files directly into Original Recordings while the app was already running.</p>
 </section>
 
 {% if status_message and not focus_group %}

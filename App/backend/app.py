@@ -139,7 +139,19 @@ def load_manifest():
     manifest_path = get_manifest_path()
     if manifest_path is None or not manifest_path.exists():
         return []
-    return json.loads(manifest_path.read_text())
+    try:
+        return json.loads(manifest_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        # Damaged manifest - rebuild from scratch via discovery rather
+        # than crash. The source audio files are never touched by this;
+        # only the manifest itself is being treated as empty so
+        # discovery can repopulate it from what's actually on disk.
+        backup_path = manifest_path.with_suffix(".json.damaged")
+        try:
+            manifest_path.replace(backup_path)
+        except OSError:
+            pass
+        return []
 
 
 def save_manifest(manifest):
@@ -207,6 +219,14 @@ def setup_confirm():
 
     local_data.ensure_subfolders(root)
     config.save(str(root))
+
+    # Original Recordings may already have files (a prior session, or
+    # manually copied in) - register them now rather than waiting for
+    # the next restart to pick them up.
+    manifest = load_manifest()
+    manifest, scan_results = scan_and_register(get_audio_dir(), manifest)
+    if scan_results["added"]:
+        save_manifest(manifest)
 
     legacy_files = local_data.find_repo_corpus(REPO_LEGACY_AUDIO_DIR)
     if legacy_files:
@@ -509,9 +529,11 @@ def import_recordings():
 
         dest_path = audio_dir / original_name
         if dest_path.exists():
-            # Shouldn't happen if the manifest and disk agree, but don't
-            # silently overwrite either way.
-            results["skipped"].append({"file": original_name, "reason": "A file with this name already exists on disk, even though it wasn't in the manifest. Not overwritten."})
+            # This is the "selected files from inside Original Recordings
+            # itself" case - the file is already exactly where it needs
+            # to be. Don't attempt to copy it onto itself; point at the
+            # feature built for exactly this.
+            results["skipped"].append({"file": original_name, "reason": "This file is already in Original Recordings. Use Scan Existing Recordings (on the Recordings page or Settings) to register it instead of Add Recordings."})
             continue
 
         # Save to a temp name first so a failed/damaged file never lands
@@ -661,6 +683,107 @@ def analyze_run():
     return render_template("analyze_results.html", active="analyze", results=results, target_count=len(targets))
 
 
+SUPPORTED_AUDIO_EXTENSIONS = {".wav", ".mp3", ".m4a", ".flac", ".aac"}
+
+
+def scan_and_register(audio_dir, manifest):
+    """
+    Scan audio_dir for audio files not represented in manifest, analyze
+    and register the valid ones. Original Recordings is treated as the
+    authoritative source - files found there always win over an empty
+    or out-of-date manifest. Never raises; every file either succeeds
+    or is reported with a specific reason, and one bad file never stops
+    the rest from being processed. Files are never copied, moved,
+    renamed, or altered by this function - only read and recorded.
+
+    Returns (updated_manifest, results). Caller is responsible for
+    saving the manifest if results["added"] is non-empty.
+    """
+    results = {"found": 0, "added": [], "already_registered": 0, "unsupported": [], "damaged": [], "failed": []}
+
+    if audio_dir is None or not audio_dir.exists():
+        return manifest, results
+
+    registered_names = {r["file"] for r in manifest}
+    # Content hashes of already-registered files still present on disk,
+    # so a file that's actually a duplicate under a different name is
+    # recognized as already registered rather than added a second time.
+    registered_checksums = {}
+    for r in manifest:
+        p = audio_dir / r["file"]
+        if p.exists():
+            try:
+                registered_checksums[_file_sha256(p)] = r["file"]
+            except OSError:
+                pass
+
+    try:
+        candidate_files = sorted(f for f in audio_dir.iterdir() if f.is_file() and not f.name.startswith("."))
+    except OSError as exc:
+        results["failed"].append({"file": "(folder)", "reason": f"Could not list Original Recordings: {exc}"})
+        return manifest, results
+
+    for f in candidate_files:
+        results["found"] += 1
+        suffix = f.suffix.lower()
+
+        if f.name in registered_names:
+            results["already_registered"] += 1
+            continue
+
+        if suffix not in SUPPORTED_AUDIO_EXTENSIONS:
+            results["unsupported"].append({"file": f.name, "reason": f"Unsupported file type ({suffix or 'no extension'})."})
+            continue
+
+        try:
+            checksum = _file_sha256(f)
+        except OSError as exc:
+            results["failed"].append({"file": f.name, "reason": f"Could not read file: {exc}"})
+            continue
+
+        if checksum in registered_checksums:
+            results["already_registered"] += 1
+            continue
+
+        try:
+            analysis = analyze_file(f)
+        except Exception as exc:  # noqa: BLE001 - one bad file must not stop the scan
+            results["failed"].append({"file": f.name, "reason": f"Analysis failed unexpectedly: {exc}"})
+            continue
+
+        if "error" in analysis or not analysis.get("codec") or not analysis.get("duration_seconds"):
+            reason = analysis.get("error") or "No readable audio stream was found - the file may be damaged or empty."
+            results["damaged"].append({"file": f.name, "reason": reason})
+            continue
+
+        entry = {
+            "file": f.name,
+            "duration_natural": natural_duration(analysis.get("duration_seconds", 0)),
+            "duration_seconds": analysis.get("duration_seconds"),
+            "classification": "Evaluation Only",
+            "status": "Active",
+            "note": f"Discovered already present in Original Recordings (registered {datetime.now().strftime('%Y-%m-%d')}). Not yet reviewed.",
+            "user_notes": "",
+            "objective_flags": analysis.get("flags", []),
+            "analysis": None,
+        }
+        manifest.append(entry)
+        registered_names.add(f.name)
+        registered_checksums[checksum] = f.name
+        results["added"].append(f.name)
+
+    return manifest, results
+
+
+@app.route("/recordings/scan", methods=["POST"])
+def scan_recordings():
+    manifest = load_manifest()
+    manifest, results = scan_and_register(get_audio_dir(), manifest)
+    if results["added"]:
+        save_manifest(manifest)
+    return render_template("scan_results.html", active="recordings", results=results)
+
+
 def _register_stub(slug, label):
     def view():
         return render_template(
@@ -676,6 +799,36 @@ def _register_stub(slug, label):
 for slug, label, path in TOOLS:
     if slug not in BUILT_TOOLS:
         app.add_url_rule(path, endpoint=slug, view_func=_register_stub(slug, label))
+
+
+def _run_startup_discovery():
+    """
+    Runs once when this module is imported - by `python app.py`
+    directly, or by launch.py's `from app import app`. Not inside
+    `if __name__ == "__main__"`, since that block never runs on the
+    launch.py path. Original Recordings is authoritative: if a valid
+    data root is already configured (the normal restart case), any
+    audio files sitting there with no manifest entry are registered
+    before the server starts accepting requests, so the first page
+    Dean sees already reflects them - no in-page "scanning" progress
+    UI needed, since nothing has been served yet to move focus on.
+    """
+    root = get_data_root()
+    status = local_data.validate_data_root(root)
+    if not (status["exists"] and status["writable"]):
+        return
+
+    print("Scanning local recordings...")
+    manifest = load_manifest()
+    manifest, results = scan_and_register(get_audio_dir(), manifest)
+    if results["added"]:
+        save_manifest(manifest)
+    total_issues = len(results["unsupported"]) + len(results["damaged"]) + len(results["failed"])
+    print(f"Scan complete: {len(results['added'])} newly registered, {results['already_registered']} already known"
+          f"{f', {total_issues} skipped/failed (see Settings or Recordings > Scan Existing Recordings for details)' if total_issues else ''}.")
+
+
+_run_startup_discovery()
 
 
 if __name__ == "__main__":
