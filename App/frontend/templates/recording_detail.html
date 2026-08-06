@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block title %}{{ r.file }} - VoiceOfOpenDoor{% endblock %}
 {% block content %}
-<h1>{{ r.file }}</h1>
+<h1 id="page-heading" tabindex="-1">{{ r.file }}</h1>
 
 <p><button type="button" class="as-link" data-href="{{ url_for('recordings_screen') }}">Return to Recordings</button></p>
 
 {% if status_message %}
-<p id="status-message" tabindex="-1">{{ status_message }}</p>
+<p id="page-focus-target" tabindex="-1">{{ status_message }}</p>
 {% endif %}
 
 <section>

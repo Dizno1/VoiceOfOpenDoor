@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Home - VoiceOfOpenDoor{% endblock %}
 {% block content %}
-<h1>VoiceOfOpenDoor</h1>
+<h1 id="page-heading" tabindex="-1">VoiceOfOpenDoor</h1>
 
 {% if status_message %}
-<p id="status-message" tabindex="-1">{{ status_message }}</p>
+<p id="page-focus-target" tabindex="-1">{{ status_message }}</p>
 {% endif %}
 
 <section>
@@ -17,10 +17,23 @@
         {% if summary.not_analyzed_count %}{{ summary.not_analyzed_count }} {% if summary.not_analyzed_count == 1 %}is{% else %}are{% endif %} not yet analyzed.{% endif %}
     </p>
 
-    {% if summary.needs_attention %}
+    {% if summary.recommendation == "analyze" %}
+    <p>{{ summary.not_analyzed_count }} recording{% if summary.not_analyzed_count != 1 %}s are{% else %} is{% endif %} waiting for analysis.</p>
+    <p>
+        <button type="button" class="as-link" data-href="{{ url_for('analyze_page', focus='needing') }}">
+            Analyze {{ summary.not_analyzed_count }} recording{% if summary.not_analyzed_count != 1 %}s{% endif %}
+        </button>
+    </p>
+    {% elif summary.recommendation == "failed" %}
+    <p>
+        <button type="button" class="as-link" data-href="{{ url_for('recordings_screen', filter='failed') }}">
+            Review analysis failures ({{ summary.failed_count }})
+        </button>
+    </p>
+    {% elif summary.recommendation == "attention" %}
     <p>
         <button type="button" class="as-link" data-href="{{ url_for('recordings_screen', filter='attention') }}">
-            Review recordings with possible issues ({{ summary.needs_attention }})
+            Review recordings with possible issues ({{ summary.needs_review_count }})
         </button>
     </p>
     {% else %}

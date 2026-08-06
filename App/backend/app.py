@@ -160,20 +160,38 @@ def save_manifest(manifest):
     manifest_path.write_text(json.dumps(manifest, indent=2))
 
 
-def build_status_summary(manifest):
+def build_status_summary(manifest, audio_dir):
     active = [r for r in manifest if r.get("status", "Active") != "Archived"]
 
     workflow_counts = {"Analysis Clear": 0, "Needs Review": 0, "Analysis Failed": 0, "Not Analyzed": 0}
     for r in active:
-        workflow_counts[compute_workflow_status(r)] += 1
+        workflow_counts[compute_workflow_status(r, audio_dir)] += 1
+
+    # Priority order, exactly as specified: recordings waiting for
+    # analysis come first (an unanalyzed recording is never "clear" -
+    # it just hasn't been checked yet), then failures, then flagged
+    # findings, and only "nothing needs attention" when none of those
+    # are true.
+    not_analyzed = workflow_counts["Not Analyzed"]
+    failed = workflow_counts["Analysis Failed"]
+    needs_review = workflow_counts["Needs Review"]
+
+    if not_analyzed:
+        recommendation = "analyze"
+    elif failed:
+        recommendation = "failed"
+    elif needs_review:
+        recommendation = "attention"
+    else:
+        recommendation = None
 
     return {
         "total": len(active),
         "clear_count": workflow_counts["Analysis Clear"],
-        "needs_review_count": workflow_counts["Needs Review"],
-        "failed_count": workflow_counts["Analysis Failed"],
-        "not_analyzed_count": workflow_counts["Not Analyzed"],
-        "needs_attention": workflow_counts["Needs Review"] + workflow_counts["Analysis Failed"],
+        "needs_review_count": needs_review,
+        "failed_count": failed,
+        "not_analyzed_count": not_analyzed,
+        "recommendation": recommendation,
     }
 
 
@@ -323,7 +341,7 @@ def settings_validate():
 @app.route("/")
 def home():
     manifest = load_manifest()
-    summary = build_status_summary(manifest)
+    summary = build_status_summary(manifest, get_audio_dir())
     return render_template("home.html", summary=summary, active="home",
                             status_message=request.args.get("status_message"))
 
@@ -333,11 +351,12 @@ FILTER_LABELS = {
     "needs_review": "Needs Review",
     "failed": "Analysis Failed",
     "clear": "No Objective Issues",
+    "analyze": "Not Yet Analyzed",
 }
 
 
-def _matches_filter(record, filter_name):
-    status = compute_workflow_status(record)
+def _matches_filter(record, filter_name, audio_dir):
+    status = compute_workflow_status(record, audio_dir)
     if filter_name == "attention":
         return status in ("Needs Review", "Analysis Failed")
     if filter_name == "needs_review":
@@ -346,6 +365,8 @@ def _matches_filter(record, filter_name):
         return status == "Analysis Failed"
     if filter_name == "clear":
         return status == "Analysis Clear"
+    if filter_name == "analyze":
+        return status == "Not Analyzed"
     return True
 
 
@@ -354,16 +375,17 @@ def recordings_screen():
     manifest = load_manifest()
     active_manifest = [r for r in manifest if r.get("status", "Active") != "Archived"]
     archived = [r for r in manifest if r.get("status", "Active") == "Archived"]
+    audio_dir = get_audio_dir()
 
     for r in active_manifest:
-        r["_workflow_status"] = compute_workflow_status(r)
+        r["_workflow_status"] = compute_workflow_status(r, audio_dir)
 
     filter_name = request.args.get("filter")
     status_message = request.args.get("status_message")
     focus_group = request.args.get("focus_group")
 
     if filter_name:
-        filtered = [r for r in active_manifest if _matches_filter(r, filter_name)]
+        filtered = [r for r in active_manifest if _matches_filter(r, filter_name, audio_dir)]
         return render_template(
             "recordings.html",
             filtered_view=True,
@@ -423,7 +445,7 @@ def recording_detail(filename):
         status_message=status_message,
         analysis_stale=stale,
         analyzed_at_natural=analyzed_at_natural,
-        workflow_status=compute_workflow_status(record),
+        workflow_status=compute_workflow_status(record, audio_dir),
     )
 
 
@@ -669,6 +691,7 @@ def analyze_page():
         r["_summary"] = summarize_for_display(r.get("analysis"))
 
     status_message = request.args.get("status_message")
+    focus_needing = request.args.get("focus") == "needing" and bool(needing_groups_list)
     return render_template(
         "analyze.html",
         active="analyze",
@@ -679,6 +702,7 @@ def analyze_page():
         needing_groups=needing_groups_list,
         analyzed=analyzed,
         status_message=status_message,
+        focus_needing=focus_needing,
     )
 
 
@@ -745,15 +769,24 @@ NEEDS_REVIEW_FLAG_MARKERS = [
 ]
 
 
-def compute_workflow_status(record):
+def compute_workflow_status(record, audio_dir=None):
     """
-    Analysis Clear / Needs Review / Analysis Failed / Not Analyzed -
+    Not Analyzed / Analysis Failed / Needs Review / Analysis Clear -
     computed fresh from the stored analysis every time, not cached on
     the record, so it can never drift out of sync with the analysis
     it's supposed to describe.
+
+    Priority order matters and is deliberate: a stale analysis (source
+    file changed since it ran) is treated the same as never having been
+    analyzed - its old flags describe a file that no longer exists in
+    that form, so they cannot be trusted to say "clear." audio_dir is
+    optional so this can still be called in contexts with no file
+    system access, but staleness can only be detected when it's given.
     """
     analysis = record.get("analysis")
     if analysis is None:
+        return "Not Analyzed"
+    if audio_dir is not None and analysis_is_stale(analysis, audio_dir / record["file"]):
         return "Not Analyzed"
     if analysis.get("status") == "failed":
         return "Analysis Failed"

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{% if filtered_view %}{{ filter_label }} - {% endif %}Recordings - VoiceOfOpenDoor{% endblock %}
 {% block content %}
-<h1>{% if filtered_view %}{{ filter_label }}{% else %}Recordings{% endif %}</h1>
+<h1 id="page-heading" tabindex="-1">{% if filtered_view %}{{ filter_label }}{% else %}Recordings{% endif %}</h1>
 
 {% if filtered_view %}
 <p><button type="button" class="as-link" data-href="{{ url_for('recordings_screen') }}">Back to all Recordings</button></p>
@@ -30,7 +30,7 @@
 {% endif %}
 
 {% if status_message and not focus_group %}
-<p id="status-message" tabindex="-1">{{ status_message }}</p>
+<p id="page-focus-target" tabindex="-1">{{ status_message }}</p>
 {% endif %}
 
 {% if filtered_view %}
@@ -54,7 +54,7 @@
 <section>
     <h2>{{ group.label }} ({{ group.recordings|length }})</h2>
     {% if status_message and focus_group == group.key %}
-    <p id="status-message" tabindex="-1">{{ status_message }}</p>
+    <p id="page-focus-target" tabindex="-1">{{ status_message }}</p>
     {% endif %}
     {% if group.recordings %}
     <ul>

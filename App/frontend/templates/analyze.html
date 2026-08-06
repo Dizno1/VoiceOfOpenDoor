@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Analyze Recordings - VoiceOfOpenDoor{% endblock %}
 {% block content %}
-<h1>Analyze Recordings</h1>
+<h1 id="page-heading" tabindex="-1">Analyze Recordings</h1>
 
 <p>Analysis measures each recording objectively - level, clipping risk, silence, format - using the same tool as the command line. It does not judge speech content or make a final decision; it supports your review.</p>
 
-{% if status_message %}
-<p id="status-message" tabindex="-1">{{ status_message }}</p>
+{% if status_message and not focus_needing %}
+<p id="page-focus-target" tabindex="-1">{{ status_message }}</p>
 {% endif %}
 
 <section>
@@ -17,7 +17,7 @@
 <form method="post" action="{{ url_for('analyze_run') }}">
 
 <section>
-    <h2>Recordings Needing Analysis ({{ needing_count }})</h2>
+    <h2{% if focus_needing %} id="page-focus-target" tabindex="-1"{% endif %}>Recordings Needing Analysis ({{ needing_count }})</h2>
 
     {% if needing_count %}
     <p><button type="submit" name="action" value="all_needing">Analyze All Needing Analysis</button></p>

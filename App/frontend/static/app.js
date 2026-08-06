@@ -1,28 +1,45 @@
-// VoiceOfOpenDoor - focus management and button-based internal navigation.
+// VoiceOfOpenDoor - centralized focus management and button-based
+// internal navigation.
 //
-// FOCUS MANAGEMENT
-// After an action (save, delete, etc.) the server redirects to a page
-// with an element carrying tabindex="-1" - either #status-message
-// (a confirmation of what just happened) or #confirm-heading (the
-// delete confirmation page's heading). Move keyboard/screen-reader
-// focus there on load, rather than leaving it at the top of the page.
+// FOCUS MANAGEMENT - ONE system, not one script per template.
 //
-// Dean reported (July 29, 2026) that focus was jumping to the top of
-// the page instead of landing on the status message. Root cause: on a
-// full page navigation, JAWS resets its own virtual cursor to the top
-// of the document and starts reading from there - a script-set
-// .focus() call on DOMContentLoaded can lose that race, because JAWS
-// may not have finished initializing its virtual buffer for the new
-// page yet. Fix: wait for the later `load` event (page fully loaded,
-// including images/audio) and add a short delay before calling
-// .focus(), giving JAWS more time to finish initializing first. This
-// is a known, documented race condition in screen reader focus
-// management, not something a single instant fix eliminates for
-// certain - if this is still unreliable after retesting, the delay
-// may need to be longer, or a different technique may be needed.
+// Every page has exactly one intended focus target, decided
+// server-side and expressed as one of two element IDs:
+//
+//   #page-focus-target - the specific result of a completed action
+//     (a status message, a results heading, an error summary). Used
+//     when a page's H1 alone wouldn't convey what just happened -
+//     e.g. Home after a classification save, Recordings after a
+//     delete. Always carries tabindex="-1".
+//
+//   #page-heading - the page's own H1. Present and tabbable on every
+//     page, always tabindex="-1". This is the correct target for
+//     ordinary navigation (Home to Recordings, Recordings to a
+//     recording's detail page, etc.) and is also the fallback if a
+//     page was supposed to set #page-focus-target but didn't.
+//
+// On load, focus #page-focus-target if present, otherwise
+// #page-heading. Never the body, main, skip link, nav, or Home
+// button - those are not legitimate programmatic focus targets per
+// the project's accessibility requirements.
+//
+// Runs once on the `load` event (not DOMContentLoaded), with a short
+// delay - this is the ONE place that delay exists, replacing several
+// per-template versions that used to compete with each other. JAWS
+// can reset its own virtual cursor to the top of a new page on
+// navigation; `load` plus a short delay gives it time to finish
+// before this script's explicit .focus() call runs, rather than
+// racing it on DOMContentLoaded.
+//
+// This only runs once per real page load. It does not re-fire while
+// the user is moving the JAWS virtual cursor through an
+// already-loaded page, and it never runs during an in-progress
+// action (every action in this app is a normal server round trip,
+// not a partial in-page update, so there is no "still working"
+// state for this script to accidentally interrupt).
 window.addEventListener("load", function () {
     setTimeout(function () {
-        var target = document.getElementById("status-message") || document.getElementById("confirm-heading");
+        var target = document.getElementById("page-focus-target") || document.getElementById("page-heading");
         if (target) {
             target.focus();
         }

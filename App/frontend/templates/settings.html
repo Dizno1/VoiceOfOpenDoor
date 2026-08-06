@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Settings - VoiceOfOpenDoor{% endblock %}
 {% block content %}
-<h1>Settings</h1>
+<h1 id="page-heading" tabindex="-1">Settings</h1>
 
 {% if status_message %}
-<p id="status-message" tabindex="-1">{{ status_message }}</p>
+<p id="page-focus-target" tabindex="-1">{{ status_message }}</p>
 {% endif %}
 
 <section>
