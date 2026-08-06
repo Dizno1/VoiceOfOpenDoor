@@ -36,7 +36,7 @@
 <section>
     <h2>Analysis</h2>
     {% if r.analysis %}
-        <p>Status: {{ r.analysis.status }}. Last analyzed: {{ analyzed_at_natural }}.</p>
+        <p>Workflow status: {{ workflow_status }}. Last analyzed: {{ analyzed_at_natural }}.</p>
         {% if analysis_stale %}
         <p>The source audio file has changed since this analysis ran. Consider running analysis again.</p>
         {% endif %}

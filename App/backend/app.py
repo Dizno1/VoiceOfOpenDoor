@@ -162,20 +162,18 @@ def save_manifest(manifest):
 
 def build_status_summary(manifest):
     active = [r for r in manifest if r.get("status", "Active") != "Archived"]
-    counts = {}
-    for r in active:
-        counts[r["classification"]] = counts.get(r["classification"], 0) + 1
 
-    next_action = None
+    workflow_counts = {"Analysis Clear": 0, "Needs Review": 0, "Analysis Failed": 0, "Not Analyzed": 0}
     for r in active:
-        if r["classification"] == "Evaluation Only":
-            next_action = r
-            break
+        workflow_counts[compute_workflow_status(r)] += 1
 
     return {
         "total": len(active),
-        "counts": counts,
-        "next_action": next_action,
+        "clear_count": workflow_counts["Analysis Clear"],
+        "needs_review_count": workflow_counts["Needs Review"],
+        "failed_count": workflow_counts["Analysis Failed"],
+        "not_analyzed_count": workflow_counts["Not Analyzed"],
+        "needs_attention": workflow_counts["Needs Review"] + workflow_counts["Analysis Failed"],
     }
 
 
@@ -225,7 +223,7 @@ def setup_confirm():
     # the next restart to pick them up.
     manifest = load_manifest()
     manifest, scan_results = scan_and_register(get_audio_dir(), manifest)
-    if scan_results["added"]:
+    if scan_results["added"] or scan_results["damaged"]:
         save_manifest(manifest)
 
     legacy_files = local_data.find_repo_corpus(REPO_LEGACY_AUDIO_DIR)
@@ -326,8 +324,29 @@ def settings_validate():
 def home():
     manifest = load_manifest()
     summary = build_status_summary(manifest)
-    return render_template("home.html", summary=summary, count_labels=COUNT_LABELS, active="home",
+    return render_template("home.html", summary=summary, active="home",
                             status_message=request.args.get("status_message"))
+
+
+FILTER_LABELS = {
+    "attention": "Recordings With Possible Issues",
+    "needs_review": "Needs Review",
+    "failed": "Analysis Failed",
+    "clear": "No Objective Issues",
+}
+
+
+def _matches_filter(record, filter_name):
+    status = compute_workflow_status(record)
+    if filter_name == "attention":
+        return status in ("Needs Review", "Analysis Failed")
+    if filter_name == "needs_review":
+        return status == "Needs Review"
+    if filter_name == "failed":
+        return status == "Analysis Failed"
+    if filter_name == "clear":
+        return status == "Analysis Clear"
+    return True
 
 
 @app.route("/recordings")
@@ -335,6 +354,26 @@ def recordings_screen():
     manifest = load_manifest()
     active_manifest = [r for r in manifest if r.get("status", "Active") != "Archived"]
     archived = [r for r in manifest if r.get("status", "Active") == "Archived"]
+
+    for r in active_manifest:
+        r["_workflow_status"] = compute_workflow_status(r)
+
+    filter_name = request.args.get("filter")
+    status_message = request.args.get("status_message")
+    focus_group = request.args.get("focus_group")
+
+    if filter_name:
+        filtered = [r for r in active_manifest if _matches_filter(r, filter_name)]
+        return render_template(
+            "recordings.html",
+            filtered_view=True,
+            filter_name=filter_name,
+            filter_label=FILTER_LABELS.get(filter_name, "Filtered Recordings"),
+            filtered_recordings=filtered,
+            archived=archived,
+            active="recordings",
+            status_message=status_message,
+        )
 
     grouped = {key: [] for key in GROUP_ORDER}
     for r in active_manifest:
@@ -349,10 +388,9 @@ def recordings_screen():
         for key in GROUP_ORDER
     ]
 
-    status_message = request.args.get("status_message")
-    focus_group = request.args.get("focus_group")
     return render_template(
         "recordings.html",
+        filtered_view=False,
         groups=groups,
         archived=archived,
         active="recordings",
@@ -385,6 +423,7 @@ def recording_detail(filename):
         status_message=status_message,
         analysis_stale=stale,
         analyzed_at_natural=analyzed_at_natural,
+        workflow_status=compute_workflow_status(record),
     )
 
 
@@ -569,16 +608,21 @@ def import_recordings():
         existing_checksums[new_checksum] = original_name
         existing_filenames.add(original_name)
 
+        # Analyze again at the final path (not temp_path) so the stored
+        # source_mtime used for staleness detection refers to where the
+        # file actually lives, not a path that no longer exists.
+        analysis_record = run_analysis(dest_path)
+
         entry = {
             "file": original_name,
-            "duration_natural": natural_duration(analysis.get("duration_seconds", 0)),
+            "duration_natural": analysis_record.get("duration_natural") or natural_duration(analysis.get("duration_seconds", 0)),
             "duration_seconds": analysis.get("duration_seconds"),
             "classification": "Evaluation Only",
             "status": "Active",
             "note": f"Imported via Add Recordings on {datetime.now().strftime('%Y-%m-%d')}. Not yet reviewed.",
             "user_notes": "",
             "objective_flags": analysis.get("flags", []),
-            "analysis": None,
+            "analysis": analysis_record,
         }
         manifest.append(entry)
         results["imported"].append(original_name)
@@ -685,6 +729,40 @@ def analyze_run():
 
 SUPPORTED_AUDIO_EXTENSIONS = {".wav", ".mp3", ".m4a", ".flac", ".aac"}
 
+# Workflow status is a separate axis from the human `classification`
+# field - it never gets set to "Candidate" or similar just because
+# analysis found nothing wrong (that's a human judgment, not an
+# automatic one). Only these specific, analyzer-supported findings
+# put a recording in the Needs Review queue - not just any flag text
+# (e.g. the low-bitrate flag is real and useful, but isn't one of the
+# categories Dean specified, so it doesn't by itself trigger Needs
+# Review).
+NEEDS_REVIEW_FLAG_MARKERS = [
+    "ceiling",  # clipping / near-clipping
+    "Low mean volume",  # unusually low level
+    "Excessive silence",
+    "Unusual channel configuration",
+]
+
+
+def compute_workflow_status(record):
+    """
+    Analysis Clear / Needs Review / Analysis Failed / Not Analyzed -
+    computed fresh from the stored analysis every time, not cached on
+    the record, so it can never drift out of sync with the analysis
+    it's supposed to describe.
+    """
+    analysis = record.get("analysis")
+    if analysis is None:
+        return "Not Analyzed"
+    if analysis.get("status") == "failed":
+        return "Analysis Failed"
+    flags = analysis.get("objective_flags") or []
+    for flag in flags:
+        if any(marker in flag for marker in NEEDS_REVIEW_FLAG_MARKERS):
+            return "Needs Review"
+    return "Analysis Clear"
+
 
 def scan_and_register(audio_dir, manifest):
     """
@@ -699,7 +777,8 @@ def scan_and_register(audio_dir, manifest):
     Returns (updated_manifest, results). Caller is responsible for
     saving the manifest if results["added"] is non-empty.
     """
-    results = {"found": 0, "added": [], "already_registered": 0, "unsupported": [], "damaged": [], "failed": []}
+    results = {"found": 0, "added": [], "already_registered": 0, "unsupported": [], "damaged": [], "failed": [],
+               "added_clear": 0, "added_needs_review": 0}
 
     if audio_dir is None or not audio_dir.exists():
         return manifest, results
@@ -746,31 +825,57 @@ def scan_and_register(audio_dir, manifest):
             continue
 
         try:
-            analysis = analyze_file(f)
+            analysis = run_analysis(f)
         except Exception as exc:  # noqa: BLE001 - one bad file must not stop the scan
             results["failed"].append({"file": f.name, "reason": f"Analysis failed unexpectedly: {exc}"})
             continue
 
-        if "error" in analysis or not analysis.get("codec") or not analysis.get("duration_seconds"):
-            reason = analysis.get("error") or "No readable audio stream was found - the file may be damaged or empty."
-            results["damaged"].append({"file": f.name, "reason": reason})
+        if analysis["status"] != "analyzed":
+            # Register it anyway, with the failed analysis attached - a
+            # damaged file physically present in Original Recordings
+            # must be discoverable (Home's tally, the Recordings
+            # "failed" filter) or the user has no way to learn about it
+            # again except by re-reading a startup console line or
+            # re-running a manual scan. Still reported in the scan
+            # results as "damaged" too, so that report stays accurate.
+            entry = {
+                "file": f.name,
+                "duration_natural": "unknown duration",
+                "duration_seconds": None,
+                "classification": "Evaluation Only",
+                "status": "Active",
+                "note": f"Discovered already present in Original Recordings (registered {datetime.now().strftime('%Y-%m-%d')}). Analysis failed - see Analysis section for details.",
+                "user_notes": "",
+                "objective_flags": [],
+                "analysis": analysis,
+            }
+            manifest.append(entry)
+            registered_names.add(f.name)
+            results["damaged"].append({"file": f.name, "reason": analysis.get("error", "Unknown error")})
             continue
 
         entry = {
             "file": f.name,
-            "duration_natural": natural_duration(analysis.get("duration_seconds", 0)),
+            "duration_natural": analysis.get("duration_natural") or natural_duration(analysis.get("duration_seconds", 0)),
             "duration_seconds": analysis.get("duration_seconds"),
             "classification": "Evaluation Only",
             "status": "Active",
             "note": f"Discovered already present in Original Recordings (registered {datetime.now().strftime('%Y-%m-%d')}). Not yet reviewed.",
             "user_notes": "",
-            "objective_flags": analysis.get("flags", []),
-            "analysis": None,
+            "objective_flags": analysis.get("objective_flags", []),
+            # Analyzed immediately as part of registration, per the
+            # analysis-first workflow - reuses this same run_analysis()
+            # call rather than analyzing the file twice.
+            "analysis": analysis,
         }
         manifest.append(entry)
         registered_names.add(f.name)
         registered_checksums[checksum] = f.name
         results["added"].append(f.name)
+        if compute_workflow_status(entry) == "Needs Review":
+            results["added_needs_review"] += 1
+        else:
+            results["added_clear"] += 1
 
     return manifest, results
 
@@ -779,8 +884,9 @@ def scan_and_register(audio_dir, manifest):
 def scan_recordings():
     manifest = load_manifest()
     manifest, results = scan_and_register(get_audio_dir(), manifest)
-    if results["added"]:
+    if results["added"] or results["damaged"]:
         save_manifest(manifest)
+    results["failed_analysis_count"] = len(results["damaged"])
     return render_template("scan_results.html", active="recordings", results=results)
 
 
@@ -809,9 +915,11 @@ def _run_startup_discovery():
     launch.py path. Original Recordings is authoritative: if a valid
     data root is already configured (the normal restart case), any
     audio files sitting there with no manifest entry are registered
-    before the server starts accepting requests, so the first page
-    Dean sees already reflects them - no in-page "scanning" progress
-    UI needed, since nothing has been served yet to move focus on.
+    AND analyzed before the server starts accepting requests, so the
+    first page Dean sees already reflects the analysis-first workflow -
+    no in-page "scanning" progress UI needed, since nothing has been
+    served yet to move focus on. Console output is a short fixed
+    sequence, not one line per file.
     """
     root = get_data_root()
     status = local_data.validate_data_root(root)
@@ -819,13 +927,32 @@ def _run_startup_discovery():
         return
 
     print("Scanning local recordings...")
+
+    audio_dir = get_audio_dir()
     manifest = load_manifest()
-    manifest, results = scan_and_register(get_audio_dir(), manifest)
-    if results["added"]:
+    registered = {r["file"] for r in manifest}
+    try:
+        candidate_count = sum(
+            1 for f in audio_dir.iterdir()
+            if f.is_file() and not f.name.startswith(".") and f.name not in registered
+        ) if audio_dir and audio_dir.exists() else 0
+    except OSError:
+        candidate_count = 0
+
+    if candidate_count:
+        print(f"Analyzing {candidate_count} new recording{'s' if candidate_count != 1 else ''}...")
+
+    manifest, results = scan_and_register(audio_dir, manifest)
+    if results["added"] or results["damaged"]:
         save_manifest(manifest)
-    total_issues = len(results["unsupported"]) + len(results["damaged"]) + len(results["failed"])
-    print(f"Scan complete: {len(results['added'])} newly registered, {results['already_registered']} already known"
-          f"{f', {total_issues} skipped/failed (see Settings or Recordings > Scan Existing Recordings for details)' if total_issues else ''}.")
+
+    if results["added"] or results["damaged"] or results["unsupported"]:
+        failed_count = len(results["damaged"])
+        unsupported_count = len(results["unsupported"])
+        unsupported_note = f" ({unsupported_count} unsupported file(s) skipped)" if unsupported_count else ""
+        print(f"Analysis complete: {results['added_clear']} clear, {results['added_needs_review']} need review, {failed_count} failed{unsupported_note}.")
+    else:
+        print(f"Scan complete: {results['already_registered']} recording(s) already registered, nothing new found.")
 
 
 _run_startup_discovery()

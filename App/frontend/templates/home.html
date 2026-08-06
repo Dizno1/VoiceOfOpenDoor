@@ -10,21 +10,23 @@
 <section>
     <h2>Current Status</h2>
     <p>
-        {{ summary.total }} recordings total:
-        {% for classification, count in summary.counts.items() %}
-            {{ count }} {{ count_labels.get(classification, classification) }}{{ "; " if not loop.last else "." }}
-        {% endfor %}
+        {{ summary.total }} recording{% if summary.total != 1 %}s{% endif %} registered.
+        {{ summary.clear_count }} {% if summary.clear_count == 1 %}has{% else %}have{% endif %} no objective issues.
+        {{ summary.needs_review_count }} may need review.
+        {{ summary.failed_count }} could not be analyzed.
+        {% if summary.not_analyzed_count %}{{ summary.not_analyzed_count }} {% if summary.not_analyzed_count == 1 %}is{% else %}are{% endif %} not yet analyzed.{% endif %}
     </p>
-    {% if summary.next_action %}
+
+    {% if summary.needs_attention %}
     <p>
-        Next recommended action:
-        <button type="button" class="as-link" data-href="{{ url_for('recording_detail', filename=summary.next_action.file) }}">
-            Review {{ summary.next_action.file }} ({{ summary.next_action.duration_natural }})
+        <button type="button" class="as-link" data-href="{{ url_for('recordings_screen', filter='attention') }}">
+            Review recordings with possible issues ({{ summary.needs_attention }})
         </button>
     </p>
     {% else %}
-    <p>No recordings currently need review.</p>
+    <p>No recordings currently require attention.</p>
     {% endif %}
+
     <p><button type="button" class="as-link" data-href="{{ url_for('recordings_screen') }}">Browse all recordings</button></p>
 </section>
 {% endblock %}

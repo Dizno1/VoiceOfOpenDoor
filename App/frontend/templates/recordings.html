@@ -1,7 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Recordings - VoiceOfOpenDoor{% endblock %}
+{% block title %}{% if filtered_view %}{{ filter_label }} - {% endif %}Recordings - VoiceOfOpenDoor{% endblock %}
 {% block content %}
-<h1>Recordings</h1>
+<h1>{% if filtered_view %}{{ filter_label }}{% else %}Recordings{% endif %}</h1>
+
+{% if filtered_view %}
+<p><button type="button" class="as-link" data-href="{{ url_for('recordings_screen') }}">Back to all Recordings</button></p>
+{% endif %}
 
 <section>
     <h2>Add Recordings</h2>
@@ -14,10 +18,38 @@
     <p>Use this if you copied files directly into Original Recordings while the app was already running.</p>
 </section>
 
+{% if not filtered_view %}
+<section>
+    <h2>Review By Analysis Outcome</h2>
+    <ul>
+        <li><button type="button" class="as-link" data-href="{{ url_for('recordings_screen', filter='attention') }}">Recordings with possible issues</button></li>
+        <li><button type="button" class="as-link" data-href="{{ url_for('recordings_screen', filter='failed') }}">Analysis failed</button></li>
+        <li><button type="button" class="as-link" data-href="{{ url_for('recordings_screen', filter='clear') }}">No objective issues</button></li>
+    </ul>
+</section>
+{% endif %}
+
 {% if status_message and not focus_group %}
 <p id="status-message" tabindex="-1">{{ status_message }}</p>
 {% endif %}
 
+{% if filtered_view %}
+<section>
+    <h2>{{ filter_label }} ({{ filtered_recordings|length }})</h2>
+    {% if filtered_recordings %}
+    <ul>
+        {% for r in filtered_recordings %}
+        <li>
+            <button type="button" class="as-link" data-href="{{ url_for('recording_detail', filename=r.file) }}">{{ r.file }}</button>
+            &mdash; {{ r.duration_natural }} &mdash; {{ r._workflow_status }}
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No recordings currently match this view.</p>
+    {% endif %}
+</section>
+{% else %}
 {% for group in groups %}
 <section>
     <h2>{{ group.label }} ({{ group.recordings|length }})</h2>
@@ -29,7 +61,7 @@
         {% for r in group.recordings %}
         <li>
             <button type="button" class="as-link" data-href="{{ url_for('recording_detail', filename=r.file) }}">{{ r.file }}</button>
-            &mdash; {{ r.duration_natural }}
+            &mdash; {{ r.duration_natural }} &mdash; {{ r._workflow_status }}
         </li>
         {% endfor %}
     </ul>
@@ -52,5 +84,6 @@
         {% endfor %}
     </ul>
 </section>
+{% endif %}
 {% endif %}
 {% endblock %}

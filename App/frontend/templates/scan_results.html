@@ -13,6 +13,10 @@
 </p>
 
 {% if results.added %}
+<p>Of the {{ results.added|length }} added: {{ results.added_clear }} have no objective issues, {{ results.added_needs_review }} may need review.</p>
+{% endif %}
+
+{% if results.added %}
 <section>
     <h2>Added ({{ results.added|length }})</h2>
     <ul>

@@ -82,12 +82,15 @@ def silence_regions(path, noise_db="-30dB", min_silence=0.5):
     ])
     starts = [float(x) for x in re.findall(r"silence_start:\s*(-?\d+(?:\.\d+)?)", err)]
     ends = [float(x) for x in re.findall(r"silence_end:\s*(-?\d+(?:\.\d+)?)", err)]
+    paired = min(len(starts), len(ends))
+    total_silence = sum(ends[i] - starts[i] for i in range(paired)) if paired else 0.0
     return {
-        "silence_segment_count": min(len(starts), len(ends)),
+        "silence_segment_count": paired,
+        "silence_total_seconds": round(total_silence, 2),
     }
 
 
-def flag_recording(info, volume):
+def flag_recording(info, volume, silence=None):
     flags = []
     if volume.get("max_volume_db") is not None and volume["max_volume_db"] >= -0.5:
         flags.append("Max volume at or near 0 dB ceiling - verify no clipping/limiting by ear.")
@@ -95,6 +98,15 @@ def flag_recording(info, volume):
         flags.append("Low mean volume - possible distant mic or quiet source; verify usable SNR by ear.")
     if info.get("bit_rate") and info["bit_rate"] < 48000:
         flags.append(f"Low bitrate ({info['bit_rate']} bps) relative to rest of corpus - check for compression artifacts.")
+    if silence and info.get("duration_seconds"):
+        duration = info["duration_seconds"]
+        silence_total = silence.get("silence_total_seconds", 0)
+        if duration > 0 and (silence_total / duration) >= 0.4:
+            pct = round((silence_total / duration) * 100)
+            flags.append(f"Excessive silence - roughly {pct}% of the recording is silence.")
+    channels = info.get("channels")
+    if channels is not None and channels not in (1, 2):
+        flags.append(f"Unusual channel configuration ({channels} channels) - voice recordings are typically mono or stereo.")
     if not flags:
         flags.append("No objective flags raised. Still requires subjective listening pass per Phase 3.")
     return flags
@@ -111,7 +123,7 @@ def analyze_file(path):
         **info,
         **volume,
         **silence,
-        "flags": flag_recording(info, volume),
+        "flags": flag_recording(info, volume, silence),
     }
 
 
